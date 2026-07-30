@@ -1,0 +1,23 @@
+Supervisor briefing — CRC-GAD ESWA R1 rejection
+================================================
+
+Dear Dr. Dhir / Indu,
+
+ESWA rejected manuscript ESWA-D-26-12770R1 (desk reject). Reviewer #6 identified
+that reported FPR/TPR numbers are arithmetically incompatible with Theorem 2
+(flagged rate ~8.6% vs theoretical max ~4.9% under the stated random-split
+protocol). We confirmed that prior submission tables used placeholder/synthetic
+values, not full experimental runs.
+
+Action taken:
+  - Halted any resubmission or appeal until real code reproduces every table
+  - Created CRC_GAD/ repository with train + conformal pipeline
+  - Will rewrite paper: marginal (not per-node) FPR claims, restore CoLA citation,
+    honest novelty (split conformal wrapper, not new GAD architecture)
+
+Timeline estimate: 2–3 months for full rebuild (6 datasets × 5 seeds + studies).
+
+Please advise whether to pursue journal resubmission (narrower calibration paper)
+or thesis-chapter scope only.
+
+— Amaan Ulla Khan

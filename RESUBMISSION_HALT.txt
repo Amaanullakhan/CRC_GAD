@@ -1,0 +1,22 @@
+================================================================================
+CRC-GAD — RESUBMISSION HALT NOTICE (ESWA R1 Rejection)
+Ref: ESWA-D-26-12770R1 | Date archived: 2026-03-29
+================================================================================
+
+DO NOT:
+  - Appeal to ESWA without executable reproduction of all tables
+  - Resubmit to any journal using placeholder/synthetic results
+  - Upload the R1 manuscript PDF with fabricated numbers
+
+STATUS:
+  - ESWA desk reject: "does not meet the scientific standard"
+  - Prior tables/figures were placeholder values (see SUBMISSION_README.txt)
+  - Rebuild in progress: CRC_GAD/ (this repo)
+
+NEXT STEPS (see README.md):
+  1. Run real experiments: python scripts/run_experiments.py
+  2. Verify flagged-rate arithmetic vs Theorem 2 before updating paper
+  3. Rewrite claims (marginal FPR, CoLA attribution, honest novelty)
+  4. Target a new venue after commit-pinned reproduction
+
+ARCHIVED R1 MATERIALS: archive_r1/
