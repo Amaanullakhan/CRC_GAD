@@ -1,5 +1,22 @@
 __pycache__/
 *.pyc
-data/
-results/run_log*.txt
 .env
+
+# Large datasets (see data/README.md + scripts/download_datasets.py)
+data/*
+!data/README.md
+
+# Run logs
+results/run_log*.txt
+results/*.log
+
+# Internal / local-only (not for public GitHub)
+archive_r1/
+RESUBMISSION_HALT.txt
+RESUBMISSION_VENUE.md
+SUPERVISOR_BRIEFING.txt
+GIT_TAG_INSTRUCTIONS.txt
+GITHUB_SYNC.md
+scripts/push_to_github.ps1
+scripts/push_to_github.sh
+results/partition_audit.json

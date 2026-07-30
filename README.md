@@ -11,35 +11,18 @@ Conformal Risk-Controlled Graph Anomaly Detection (rebuild after ESWA R1 rejecti
 - **Paper tables/figures:** `paper/generated/*.tex`, `paper/figures/*.png` (from CSV)
 - **GitHub:** Push this folder to replace the old stub repo (see below)
 
-## Push to GitHub (one time)
+## Push to GitHub
 
-Install [Git for Windows](https://git-scm.com/download/win) (includes **Git Bash**).
-
-**Git Bash** (use `/c/...` paths, not `C:\...`):
+Public repo includes **code, results CSVs, and paper only** — not internal notes, logs, or `data/*.mat`.
 
 ```bash
 cd /c/Users/DSU-CSE514-38/Desktop/AMAAN_CRC/CRC_GAD
-bash scripts/push_to_github.sh
-```
-
-If push rejected (old stub history on GitHub):
-
-```bash
-git push -u origin main --force
+git add .
+git commit -m "Keep only reproducibility files on GitHub"
+git push origin main
+git tag -f v1.0-rebuild
 git push origin v1.0-rebuild --force
 ```
-
-**PowerShell** (optional):
-
-```powershell
-cd C:\Users\DSU-CSE514-38\Desktop\AMAAN_CRC\CRC_GAD
-.\scripts\push_to_github.ps1
-git branch -M main
-git push -u origin main
-git push origin v1.0-rebuild
-```
-
-Or follow `GIT_TAG_INSTRUCTIONS.txt` / `GITHUB_SYNC.md`.
 
 ## Quick start
 
