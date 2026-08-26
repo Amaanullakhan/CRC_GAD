@@ -93,8 +93,6 @@ Experiments apply the \emph{same} wrapper to multiple scorers (PyTorch DOMINANT,
 All numbers regenerate from commit-pinned code (\url{https://github.com/Amaanullakhan/CRC_GAD}).
 \end{abstract}
 
-% Keywords
-% Each keyword is separated by \sep
 \begin{keywords}
 Graph anomaly detection\sep
 Conformal prediction\sep
@@ -504,9 +502,7 @@ Algorithm~\ref{alg:crcgad} summarizes the end-to-end CRC-GAD pipeline (contrasti
 \caption{CRC-GAD pipeline.}
 \label{alg:crcgad}
 \begin{algorithmic}[1]
-
-
-    \REQUIRE Graph $\mathcal{G}=(\mathcal{V},\mathcal{E},\mathbf{X})$, significance level $\alpha \in (0,1)$, hyperparameters $(K, R, E_{\text{val}}, \texttt{max\_epochs}, \texttt{patience})$.
+\REQUIRE Graph $\mathcal{G}=(\mathcal{V},\mathcal{E},\mathbf{X})$, significance level $\alpha \in (0,1)$, hyperparameters $(K, R, E_{\text{val}}, \texttt{max\_epochs}, \texttt{patience})$.
 \ENSURE P-values $\{p_i\}_{i\in\mathcal{T}}$, decisions $\{\hat{y}_i\}_{i\in\mathcal{T}}$.
 \STATE Normalize features and adjacency to obtain $\tilde{\mathbf{X}}$ (Eq.~\ref{eq:feat_norm}) and $\hat{\mathbf{A}}$ (Eq.~\ref{eq:adj_norm}).
 \STATE Uniformly split nodes into $\mathcal{V}_{\text{train}}, \mathcal{V}_{\text{val}}, \mathcal{C}, \mathcal{T}$.
@@ -604,8 +600,7 @@ Let $\theta^*$ denote the trained model parameters and let $\mathbf{s} = (s_i)_{
 \end{theorem}
 
 \begin{proof}
-Fix the trained model parameters $\theta^*$ and the resulting score vector $\mathbf{s} = (s_i)_{i \in \mathcal{V}_{\text{eval}}}$.  The scores are deterministic conditional on $\theta^*$.  The partition $(\mathcal{C}, \mathcal{T})$ is chosen uniformly at random among all $\binom{|\mathcal{V}_{\text{eval}}|}{n}$ splits of $\mathcal{V}_{\text{eval}}$, and the test node $v_i$ is chosen uniformly at random from $\mathcal{T}$.  The combined experiment of (i)~choosing the partition and (ii)~selecting the test node is equivalent to selecting a uniformly random ordered pair (test index, remaining set) from $\mathcal{V}_{\text{eval}}$.  Conditional on $\mathbf{s}$, each node in $\mathcal{V}_{\text{eval}}$ is equally likely to occupy the test role.  Therefore the rank of $s_i$ among the $n+1$ scores $\{s_j\}_{j \in \mathcal{C}} \cup \{s_i\}$ is uniformly distributed over $\{1, \ldots, n+1\}$ by symmetry of the uniform random selection.  Applying the argument of Theorem~\ref{thm:marginal_full} verbatim gives $\Pr(p_i \leq \alpha) \leq \alpha$.  
-% $\square$
+Fix the trained model parameters $\theta^*$ and the resulting score vector $\mathbf{s} = (s_i)_{i \in \mathcal{V}_{\text{eval}}}$.  The scores are deterministic conditional on $\theta^*$.  The partition $(\mathcal{C}, \mathcal{T})$ is chosen uniformly at random among all $\binom{|\mathcal{V}_{\text{eval}}|}{n}$ splits of $\mathcal{V}_{\text{eval}}$, and the test node $v_i$ is chosen uniformly at random from $\mathcal{T}$.  The combined experiment of (i)~choosing the partition and (ii)~selecting the test node is equivalent to selecting a uniformly random ordered pair (test index, remaining set) from $\mathcal{V}_{\text{eval}}$.  Conditional on $\mathbf{s}$, each node in $\mathcal{V}_{\text{eval}}$ is equally likely to occupy the test role.  Therefore the rank of $s_i$ among the $n+1$ scores $\{s_j\}_{j \in \mathcal{C}} \cup \{s_i\}$ is uniformly distributed over $\{1, \ldots, n+1\}$ by symmetry of the uniform random selection.  Applying the argument of Theorem~\ref{thm:marginal_full} verbatim gives $\Pr(p_i \leq \alpha) \leq \alpha$.
 \end{proof}
 
 \begin{remark}
