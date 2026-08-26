@@ -509,7 +509,7 @@ Under Theorem~\ref{thm:randomization}, $\Pr(p_i \leq \alpha) \leq \alpha$ margin
 
 Algorithm~\ref{alg:crcgad} summarizes the end-to-end CRC-GAD pipeline (contrastive scoring step matches our simplified implementation in Section~\ref{sec:meth_training}). The algorithm takes as input the attributed graph $\mathcal{G}$, hyperparameters (scoring rounds $R$, calibration ratio $\rho$, etc.), and the significance level $\alpha$. It outputs conformal p-values and binary decisions for all test nodes. Steps 1--2 preprocess the graph and partition the node set. Steps 3--5 train the contrastive scorer with early stopping on validation AUC. Steps 6--7 compute anomaly scores for all nodes over $R$ rounds. Steps 8--9 compute p-values and apply the decision rule for test nodes. The conformal layer is model-agnostic: any score-based graph anomaly detector can serve as the backbone~\cite{ding2019dominant,fan2020anomalydae,xu2022conad}. Table~\ref{tab:main_results} reports the pinned simplified CoLA-style scorer; Table~\ref{tab:backbones} wraps multiple alternative scorers with the same CRC-GAD layer.
 
-\begin{algorithm}[pos=t]
+\begin{algorithm}[t]
 \caption{CRC-GAD pipeline.}
 \label{alg:crcgad}
 \begin{algorithmic}[1]
