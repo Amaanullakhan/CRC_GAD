@@ -53,7 +53,7 @@ def gen_backbones(rows):
     datasets = sorted({r["dataset"] for r in rows})
     backbones = ["cola", "dominant", "dominant_style", "degree", "feature_norm", "attr_deviation"]
     lines = [
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{ll" + "c" * len(datasets) + "}",
         "\\toprule",
         "Backbone & Metric & " + " & ".join(d.title() for d in datasets) + " \\\\",
@@ -134,7 +134,7 @@ def gen_heuristics_multi(rows):
     datasets = sorted({r["dataset"] for r in rows})
     methods = ["CRC-GAD", "Percentile", "Feature-space CP", "Uniform random + CP"]
     lines = [
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{ll" + "cc" * len(datasets) + "}",
         "\\toprule",
         "Method & & " + " & ".join(f"{d.title()} FPR & TPR" for d in datasets) + " \\\\",

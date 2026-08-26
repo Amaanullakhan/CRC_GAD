@@ -46,19 +46,19 @@ def gen_main_results(rows):
         by[r["dataset"]].append(r)
     header = " & ".join(d.title() for d in DATASETS)
     lines = [
-        "\\resizebox{\\linewidth}{!}{%",
+        "\\resizebox{\\textwidth}{!}{%",
         f"\\begin{{tabular}}{{l{'c' * len(DATASETS)}}}",
         "\\toprule",
         f"\\textbf{{Metric}} & {header} \\\\",
         "\\midrule",
     ]
     for label, key in [
-        ("CoLA backbone AUC (raw)", "raw_auc_all"),
-        ("CRC-GAD conformal AUC", "conformal_auc"),
-        ("FPR @ $\\alpha{=}0.05$", "fpr@0.05"),
-        ("TPR @ $\\alpha{=}0.05$", "tpr@0.05"),
-        ("Flagged rate @ $0.05$", "flagged@0.05"),
-        ("Theory expected flagged @ $0.05$", "theory_max_flagged@0.05"),
+        ("CoLA raw AUC", "raw_auc_all"),
+        ("CRC-GAD conf.\\ AUC", "conformal_auc"),
+        ("FPR@0.05", "fpr@0.05"),
+        ("TPR@0.05", "tpr@0.05"),
+        ("Flagged@0.05", "flagged@0.05"),
+        ("Theory flagged@0.05", "theory_max_flagged@0.05"),
     ]:
         cells = []
         for d in DATASETS:
@@ -81,9 +81,9 @@ def gen_main_results(rows):
                     gaps.append(abs(float(r[k])))
         gap_cells.append(f"{max(gaps):.1e}" if gaps else "---")
     lines.append(
-        "Max identity gap (all $\\alpha$) & " + " & ".join(gap_cells) + " \\\\"
+        "Max ID gap & " + " & ".join(gap_cells) + " \\\\"
     )
-    lines += ["\\bottomrule", "\\end{tabular}", "}"]
+    lines += ["\\bottomrule", "\\end{tabular}%", "}"]
     write("main_results.tex", "\n".join(lines) + "\n")
 
 

@@ -1,4 +1,4 @@
-\documentclass[a4paper,fleqn]{cas-dc}
+\documentclass[a4paper]{cas-dc}
 
 \usepackage{graphicx}
 \graphicspath{{./}{figures/}}
@@ -20,6 +20,10 @@
 \renewcommand{\qedsymbol}{}
 \usepackage{placeins}
 \raggedbottom
+\emergencystretch=2em
+\tolerance=2000
+\hbadness=10000
+\vbadness=10000
 
 \renewcommand{\topfraction}{0.95}
 \renewcommand{\bottomfraction}{0.90}
@@ -65,11 +69,11 @@
 
 \begin{document}
 
-\shorttitle{CRC-GAD: Marginal Split-Conformal Calibration for Graph Anomaly Scores}
-\shortauthors{Amaan Ulla Khan and Renu Dhir and Indu Sounkhla}
+\shorttitle{CRC-GAD: Conformal Calibration for Graph Anomaly Scores}
+\shortauthors{Khan et al.}
 
 
-\title[mode=title]{CRC-GAD: Split-Conformal Calibration of Graph Anomaly Scores with Marginal False-Positive Control}
+\title[mode=title]{CRC-GAD: Split-Conformal Calibration for Graph Anomaly Scores}
 
 \author[1]{Amaan Ulla Khan}
 \author[1]{Dr. Renu Dhir}
@@ -203,18 +207,21 @@ Table~\ref{tab:cp_uncertainty_compare} contrasts CRC-GAD with representative \em
 \caption{Comparison of CRC-GAD with recent conformal and uncertainty-aware methods (literature positioning; see Section~\ref{sec:exp_conformal_compare} for empirical context on Cora).}
 \label{tab:cp_uncertainty_compare}
 \renewcommand{\arraystretch}{1.12}
-\small
-\begin{tabular}{@{}p{0.20\linewidth}p{0.14\linewidth}p{0.20\linewidth}p{0.12\linewidth}p{0.28\linewidth}@{}}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lllll@{}}
 \toprule
-\textbf{Method / reference} & \textbf{Graph task} & \textbf{Guarantee target} & \textbf{Anomaly labels?} & \textbf{Relation to CRC-GAD} \\
+\textbf{Method} & \textbf{Graph task} & \textbf{Guarantee} & \textbf{Labels?} & \textbf{Relation to CRC-GAD} \\
 \midrule
-Huang et al.~\cite{huang2024uncertainty} & Supervised node classification & Prediction-set coverage & Yes (class labels) & Different objective (coverage, not unsupervised FPR) \\
-Liu et al.~\cite{liu2024conformal} & Graph-level OOD / energy scores & OOD detection (empirical) & Often augmented / supervised signals & Graph-level OOD, not node-level unsupervised GAD \\
-Bates et al.~\cite{bates2023testing} & Tabular / vectorial outliers & Conformal p-values (FPR/FDR) & Optional & Same CP machinery; CRC-GAD extends to graph scores + random partition \\
-Zhang et al.~\cite{zhang2024eswauncertainty} & Deep anomaly detection (general) & Heuristic uncertainty bands & Varies & Motivates UQ; lacks split-conformal FPR guarantee \\
-\textbf{CRC-GAD (ours)} & Unsupervised node GAD & Marginal $\Pr(p_i \leq \alpha) \leq \alpha$ (random test node) & \textbf{None} & Post-hoc calibration of any graph scorer \\
+Huang et al.~\cite{huang2024uncertainty} & Node classification & Set coverage & Class labels & Coverage, not unsupervised FPR \\
+Liu et al.~\cite{liu2024conformal} & Graph-level OOD & OOD (empirical) & Often supervised & Not node-level unsupervised GAD \\
+Bates et al.~\cite{bates2023testing} & Tabular outliers & Conformal p-values & Optional & Same CP; we wrap graph scores \\
+Zhang et al.~\cite{zhang2024eswauncertainty} & Deep AD (general) & Heuristic UQ & Varies & Motivates UQ; no split-CP FPR \\
+\textbf{CRC-GAD (ours)} & Node GAD & Marginal $\Pr(p\leq\alpha)\leq\alpha$ & None & Post-hoc calibration wrapper \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 A critical distinction of our work is the {unsupervised} setting: CRC-GAD applies conformal calibration to anomaly scores from a self-supervised contrastive-style model without anomaly labels in training.  Validity is obtained via the random calibration--test partition (marginal over the partition), not by assuming node independence.  Relative to supervised conformal GNN coverage~\cite{huang2024uncertainty} and tabular conformal outlier tests~\cite{bates2023testing}, the combination we study---unsupervised node-level graph scores, a label-free random partition, and an auditable flagged-rate identity---remains under-explored.
 
@@ -227,15 +234,19 @@ Table~\ref{tab:gap_comparison} summarizes how the three literature strands relat
 \caption{Comparative positioning: limitations of prior lines of work and how CRC-GAD addresses them (mapped to Introduction contributions).}
 \label{tab:gap_comparison}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabular}{@{}p{0.22\linewidth}p{0.34\linewidth}p{0.38\linewidth}@{}}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lll@{}}
 \toprule
-\textbf{Literature strand} & \textbf{Key limitation for deployment} & \textbf{CRC-GAD response (contribution)} \\
+\textbf{Literature strand} & \textbf{Key limitation} & \textbf{CRC-GAD response} \\
 \midrule
-Deep GAD (reconstruction, GAN) & Uncalibrated scores; no finite-sample p-value FPR statement; full-graph decode cost & Split conformal wrapper; marginal $\Pr(p_i \leq \alpha) \leq \alpha$ (random test node); frozen scorer (1--2) \\
-Contrastive GAD (CoLA, CONAD, \ldots) & Strong AUC; thresholds tuned heuristically; no $\alpha$-level p-value semantics & Same wrapper on raw $s_i$; ranking preserved; auditable via flagged-rate identity (3); benchmark validation (5) \\
-Conformal methods on graphs & Supervised coverage or OOD; not unsupervised node anomaly scores & Unsupervised split CP on graph scores; random-partition marginal validity (2) \\
+Deep GAD (reconstruction, GAN) & Uncalibrated scores; no finite-sample p-value FPR & Split conformal wrapper; marginal random-test-node validity \\
+Contrastive GAD (CoLA, CONAD, \ldots) & Strong AUC; heuristic thresholds & Same wrapper on $s_i$; ranking preserved; flagged-rate identity \\
+Conformal methods on graphs & Supervised coverage / OOD; not unsupervised node GAD & Unsupervised split CP; random-partition marginal validity \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table*}
 \section{Problem Formulation}
 \label{sec:problem}
@@ -587,10 +598,12 @@ The p-value is then $p_{n+1} = R_{n+1}/(n + 1)$.  By exchangeability, the joint 
 when the scores are almost surely distinct (we address ties in Section~\ref{sec:th_ties}).
 
 Now, the event $\{p_{n+1} \leq \alpha\}$ is equivalent to $\{R_{n+1} \leq \alpha(n+1)\}$, which is equivalent to $\{R_{n+1} \leq \lfloor \alpha(n+1) \rfloor\}$ since $R_{n+1}$ is an integer.  Therefore:
-\begin{equation}
+\begin{multline}
 \label{eq:prob_bound}
-    \Pr(p_{n+1} \leq \alpha) = \Pr\bigl(R_{n+1} \leq \lfloor\alpha(n+1)\rfloor\bigr) = \frac{\lfloor\alpha(n+1)\rfloor}{n+1} \;\leq\; \alpha.
-\end{equation}
+    \Pr(p_{n+1} \leq \alpha)
+    = \Pr\bigl(R_{n+1} \leq \lfloor\alpha(n+1)\rfloor\bigr)\\
+    = \frac{\lfloor\alpha(n+1)\rfloor}{n+1} \;\leq\; \alpha.
+\end{multline}
 The inequality follows from the elementary fact that $\lfloor x \rfloor \leq x$ for all $x \in \mathbb{R}$.
 \end{proof}
 
@@ -728,21 +741,21 @@ Table~\ref{tab:main_results} reports \emph{our re-runs only} under a shared inje
 \end{table*}
 
 
-\begin{figure}
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig2_fpr_control.png}
 \caption{Empirical FPR versus nominal $\alpha$ on Cora (from \texttt{results/main\_results.csv}); dashed line is $\mathrm{FPR}=\alpha$. See Table~\ref{tab:abl_alpha} and Table~\ref{tab:exp_conformal_compare}.}
 \label{fig:fpr_control}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig3_tpr_power.png}
 \caption{Empirical TPR versus nominal $\alpha$ on Cora (from CSV). TPR is not guaranteed; it depends on backbone AUC.}
 \label{fig:tpr_power}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig4_per_dataset_fpr_tpr.png}
 \caption{Per-dataset conformal AUC from \texttt{results/main\_summary.json} (Table~\ref{tab:main_results}).}
@@ -776,13 +789,18 @@ By Theorem~\ref{thm:randomization}, marginal validity $\Pr(p_i \leq \alpha) \leq
 \subsection{Implementation Details}
 \label{sec:exp_implementation}
 
-Experiments use Python 3.13, NumPy/SciPy, and scikit-learn (\texttt{requirements.txt}).  \textbf{Protocol:} train 60\%, val 10\% of remainder, eval split into $\mathcal{C}$ ($\rho=0.3$) and $\mathcal{T}$; label-free; see \texttt{docs/CALIBRATION\_SET\_AUDIT.md}.  \textbf{Hyperparameters (defaults in \texttt{src/crc\_gad/config.py}):} $d=128$, $K=8$, $M=5$ negatives, $R=32$ scoring rounds, $\rho=0.3$, Adam lr $0.001$, max 120 epochs, val check every 10 epochs, patience 10.  Optional full runs may increase $R$; all tables in this submission use the pinned defaults unless noted.  \textbf{Reproducibility:} \texttt{python scripts/run\_experiments.py}; outputs \texttt{results/main\_results.csv}; tables via \texttt{scripts/generate\_paper\_tables.py}; figures via \texttt{scripts/regenerate\_figures.py}.  Code: \url{https://github.com/Amaanullakhan/CRC_GAD} (tag \texttt{v1.0-rebuild} at submission).
+Experiments use Python~3.13, NumPy/SciPy, and scikit-learn (\texttt{requirements.txt}).
+\textbf{Protocol:} train 60\%, val 10\% of remainder, eval split into $\mathcal{C}$ ($\rho=0.3$) and $\mathcal{T}$ (label-free; \texttt{docs/CALIBRATION\_SET\_AUDIT.md}).
+\textbf{Defaults} (\texttt{src/crc\_gad/config.py}): $d{=}128$, $K{=}8$, $M{=}5$, $R{=}32$, $\rho{=}0.3$, Adam lr $0.001$, max 120 epochs, val every 10 epochs, patience 10.
+\textbf{Reproduce:} \texttt{scripts/run\_experiments.py} $\to$ \texttt{results/main\_results.csv}; tables via \texttt{scripts/generate\_paper\_tables.py}.
+Code: \url{https://github.com/Amaanullakhan/CRC_GAD} (tag \texttt{v1.0-rebuild}).
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \caption{Summary statistics of the benchmark datasets.}
 \label{tab:datasets}
-\resizebox{\linewidth}{!}{%
+\footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrrrc}
 \toprule
 \textbf{Dataset} & $N$ & $|\mathcal{E}|$ & $F$ & \textbf{\#Anom.} & \textbf{\%} \\
@@ -794,11 +812,10 @@ ACM & 16,484 & 71,980 & 8,337 & 600 & 3.6\% \\
 BlogCatalog & 5,196 & 171,743 & 8,189 & 300 & 5.8\% \\
 Flickr & 7,575 & 239,738 & 12,047 & 450 & 5.9\% \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \caption{Key hyperparameters (defaults used across datasets unless noted).}
 \label{tab:hyperparams}
@@ -813,7 +830,7 @@ Scoring rounds $R$ & 32 \\
 Calibration ratio $\rho$ & 0.3 \\
 Learning rate & 0.001 (Adam) \\
 Max epochs $T$ & 120 \\
-Early stopping & Val. AUC, patience 10 \\
+Early stopping & Val.\ AUC, patience 10 \\
 Random seeds & $\{0,1,2,3,4\}$ (5 runs) \\
 \bottomrule
 \end{tabular}
@@ -828,7 +845,8 @@ To understand the sensitivity of CRC-GAD to its design choices and to validate t
 \centering
 \caption{Ablation on Cora (mean $\pm$ std, 5 seeds; from \texttt{results/main\_results.csv}).}
 \label{tab:abl_components}
-\input{generated/ablation_components.tex}
+\footnotesize
+\resizebox{\textwidth}{!}{\input{generated/ablation_components.tex}}
 \end{table*}
 
 Table~\ref{tab:abl_components}: conformal calibration preserves backbone AUC while reporting FPR/TPR/flagged rate at $\alpha=0.05$ (Proposition~\ref{prop:flagged}).
@@ -868,15 +886,17 @@ On Cora at $\alpha=0.05$ (Table~\ref{tab:exp_conformal_compare}; mean$\pm$std ov
 
 \begin{table}[t]
 \centering
-\caption{Heuristic comparison on Cora/Citeseer/PubMed ($\alpha=0.05$; mean$\pm$std over 5 seeds). Full multi-dataset view also in Table~\ref{tab:heuristics_multi}.}
+\caption{Heuristic comparison on Cora ($\alpha=0.05$; mean$\pm$std over 5 seeds). Full multi-dataset view also in Table~\ref{tab:heuristics_multi}.}
 \label{tab:exp_conformal_compare}
-\input{generated/heuristics.tex}
+\footnotesize
+\resizebox{\linewidth}{!}{\input{generated/heuristics.tex}}
 \end{table}
 
 \begin{table*}[t]
 \centering
 \caption{Heuristic comparison across Planetoid graphs ($\alpha=0.05$; mean$\pm$std, 5 seeds).}
 \label{tab:heuristics_multi}
+\footnotesize
 \input{generated/heuristics_multi.tex}
 \end{table*}
 
@@ -891,7 +911,8 @@ To quantify partition variance under graph dependence, we report empirical FPR@0
 \centering
 \caption{FPR@0.05 variance under edge rewiring + 200 random splits per seed (Cora; mean over seeds $\{0,\ldots,4\}$).}
 \label{tab:dependence}
-\input{generated/dependence.tex}
+\footnotesize
+\resizebox{\linewidth}{!}{\input{generated/dependence.tex}}
 \end{table}
 
 FPR remains near $\alpha=0.05$ on average with non-trivial spread (5th--95th percentiles), quantifying partition noise rather than claiming robustness to dependence.
@@ -905,7 +926,8 @@ We vary the anomaly fraction $\pi_{\mathcal{C}}$ in $\mathcal{C}$ on Cora ($\alp
 \centering
 \caption{Calibration-set contamination on Cora ($\alpha = 0.05$; mean$\pm$std over 5 seeds; \texttt{scripts/run\_studies.py}).}
 \label{tab:abl_contamination}
-\input{generated/contamination.tex}
+\footnotesize
+\resizebox{\linewidth}{!}{\input{generated/contamination.tex}}
 \end{table}
 \begin{figure}[t]
 \centering
@@ -956,7 +978,8 @@ As a non-injected stress test, we mark the rarest Planetoid class on Cora as ano
 \centering
 \caption{Organic rare-class proxy on Cora (mean$\pm$std, 5 seeds, $\alpha=0.05$).}
 \label{tab:organic}
-\input{generated/organic.tex}
+\footnotesize
+\resizebox{\linewidth}{!}{\input{generated/organic.tex}}
 \end{table}
 
 \subsubsection{Comparison with Supervised Conformal Baseline}
@@ -978,7 +1001,7 @@ All numbers regenerate from pinned code.
 
 Limitations remain: CONAD under the identical protocol is left for future work; the organic proxy is not a real fraud graph; and concentration of single-deployment FPR is left empirical.
 Future work includes trimmed calibration under contamination~\cite{bates2023testing}, online updates on evolving graphs, and tighter coupling to domain-specific review policies.
-CRC-GAD is best read as a \emph{calibration protocol} for graph anomaly scores---a deployment layer with precise, limited guarantees---not as a claim of universal risk control.
+CRC-GAD is best read as a \emph{calibration protocol} for graph anomaly scores: a deployment layer with precise, limited guarantees, not universal risk control.
 
 
 \section*{Declarations}

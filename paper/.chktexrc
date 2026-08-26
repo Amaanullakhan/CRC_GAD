@@ -1,0 +1,5 @@
+# ChkTeX config for Elsevier CAS + generated tables
+CmdLine {
+  -n25
+  -n44
+}
