@@ -202,7 +202,7 @@ Within the graph learning community, interest in conformal methods has grown rap
 
 Existing conformal graph methods primarily target \emph{supervised} node classification (coverage of label sets) or graph-level out-of-distribution detection with labeled or augmented signals~\cite{huang2024uncertainty,liu2024conformal}.  Tabular conformal outlier tests~\cite{bates2023testing} assume i.i.d.\ feature vectors rather than dependent node scores on a fixed graph.  None of these settings simultaneously (i)~preserves a fully unsupervised contrastive graph scorer, (ii)~calibrates \emph{node-level} anomaly rankings post hoc, and (iii)~delivers marginal FPR control via a score-agnostic random partition rather than node exchangeability.
 Table~\ref{tab:cp_uncertainty_compare} contrasts CRC-GAD with representative \emph{recent} conformal and uncertainty-aware lines that appear in our reference set~\cite{huang2024uncertainty,liu2024conformal,bates2023testing,zhang2024eswauncertainty,angelopoulos2023conformal}.  Conformalized GNNs~\cite{huang2024uncertainty} provide marginal \emph{coverage} of discrete label sets for supervised node classification; they do not output node-level anomaly p-values for an unsupervised scorer.  Graph-level energy and augmentation-based OOD pipelines~\cite{liu2024conformal} target graph- or instance-level out-of-distribution decisions rather than calibrating contrastive anomaly rankings on a fixed attributed network.  Tabular conformal outlier tests~\cite{bates2023testing} share our use of conformal p-values but treat features as i.i.d.\ vectors, whereas CRC-GAD calibrates dependent node scores under a random evaluation split.  Distribution-free uncertainty heuristics for deep anomaly detection~\cite{zhang2024eswauncertainty} motivate UQ in expert systems but generally lack the finite-sample FPR semantics of split conformal inference.  CRC-GAD is complementary: it is a post-hoc wrapper that preserves a frozen contrastive scorer and exports explicit $\alpha$-level FPR semantics for normal nodes (Section~\ref{sec:prob_fpr}).
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{Comparison of CRC-GAD with recent conformal and uncertainty-aware methods (literature positioning; see Section~\ref{sec:exp_conformal_compare} for empirical context on Cora).}
 \label{tab:cp_uncertainty_compare}
@@ -229,7 +229,7 @@ A critical distinction of our work is the {unsupervised} setting: CRC-GAD applie
 \label{sec:rw_positioning}
 
 Table~\ref{tab:gap_comparison} summarizes how the three literature strands relate to the contributions stated in the Introduction.  Deep reconstruction and generative detectors (Section~\ref{sec:rw_gad}) and contrastive scorers (Section~\ref{sec:rw_contrastive}) excel at unsupervised ranking (high AUC) but leave the \emph{calibration gap}: raw scores do not translate into marginal FPR semantics at nominal $\alpha$.  Conformal prediction on graphs (Section~\ref{sec:rw_cp}) provides distribution-free validity but has not been standard for unsupervised node anomaly scores with a random label-free partition.  CRC-GAD is deliberately post-hoc and model-agnostic: it does \emph{not} replace CoLA, DOMINANT, or CONAD training; it adds split conformal calibration on top of any score-based detector.
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{Comparative positioning: limitations of prior lines of work and how CRC-GAD addresses them (mapped to Introduction contributions).}
 \label{tab:gap_comparison}
@@ -253,7 +253,7 @@ Conformal methods on graphs & Supervised coverage / OOD; not unsupervised node G
 
 This section formally defines the data model, the anomaly detection task, and the calibration objective addressed by CRC-GAD.  Table~\ref{tab:notation} summarizes the notation used in the problem formulation and in the CRC-GAD methodology (Section~\ref{sec:method}).  We introduce notation in Section~\ref{sec:prob_notation}, state the unsupervised graph anomaly detection problem in Section~\ref{sec:prob_gad}, recall the contrastive subgraph-level scoring setup in Section~\ref{sec:prob_contrastive_scoring}, and formalize the FPR-controlled detection problem that motivates conformal calibration in Section~\ref{sec:prob_fpr}.
 
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{Summary of notation.}
 \label{tab:notation}
@@ -450,7 +450,7 @@ This section presents the complete CRC-GAD framework in detail, including formal
 \label{sec:meth_overview}
 
 CRC-GAD is a two-phase framework that first obtains unsupervised anomaly scores from a contrastive subgraph-level representation learner (as in~\cite{liu2022cola}) and then applies split conformal prediction to convert those scores into calibrated p-values with marginal false positive rate (FPR) control under a random calibration--test partition. The pipeline is non-invasive: it requires no architectural changes to the underlying scorer, no retraining, and no access to anomaly labels. Nodes are flagged when $p_i \leq \alpha$; under Theorem~\ref{thm:randomization} the mixed test flagged rate is bounded by $\lfloor\alpha(n{+}1)\rfloor/(n{+}1)$, with expected normal-node FPR discussed in Proposition~\ref{prop:flagged}.
-\begin{figure*}[t]
+\begin{figure*}[pos=t]
 \centering
 \includegraphics[width=\linewidth]{figures/pipeline.png}
 \caption{Overview of CRC-GAD: a frozen score-based GAD backbone (CoLA-inspired contrastive by default; PyTorch DOMINANT and degree/attribute alternatives in experiments), split conformal calibration to $p$-values via a label-free random $\mathcal{C}/\mathcal{T}$ split, and decisions at nominal level $\alpha$. The proved guarantee is marginal random-test-node validity (Theorem~\ref{thm:randomization}).}
@@ -509,7 +509,7 @@ Under Theorem~\ref{thm:randomization}, $\Pr(p_i \leq \alpha) \leq \alpha$ margin
 
 Algorithm~\ref{alg:crcgad} summarizes the end-to-end CRC-GAD pipeline (contrastive scoring step matches our simplified implementation in Section~\ref{sec:meth_training}). The algorithm takes as input the attributed graph $\mathcal{G}$, hyperparameters (scoring rounds $R$, calibration ratio $\rho$, etc.), and the significance level $\alpha$. It outputs conformal p-values and binary decisions for all test nodes. Steps 1--2 preprocess the graph and partition the node set. Steps 3--5 train the contrastive scorer with early stopping on validation AUC. Steps 6--7 compute anomaly scores for all nodes over $R$ rounds. Steps 8--9 compute p-values and apply the decision rule for test nodes. The conformal layer is model-agnostic: any score-based graph anomaly detector can serve as the backbone~\cite{ding2019dominant,fan2020anomalydae,xu2022conad}. Table~\ref{tab:main_results} reports the pinned simplified CoLA-style scorer; Table~\ref{tab:backbones} wraps multiple alternative scorers with the same CRC-GAD layer.
 
-\begin{algorithm}[t]
+\begin{algorithm}[pos=t]
 \caption{CRC-GAD pipeline.}
 \label{alg:crcgad}
 \begin{algorithmic}[1]
@@ -733,7 +733,7 @@ Table~\ref{tab:main_results} reports \emph{our re-runs only} under a shared inje
 
 \textbf{Reading the table.} Empirical FPR tracks $\alpha{=}0.05$ on Cora, Citeseer, PubMed, and Flickr, but exceeds $\alpha$ on ACM ($0.051$) and BlogCatalog ($0.055$).  Backbone AUC is strong on Planetoid graphs yet \emph{below chance} on BlogCatalog ($0.365$) and Flickr ($0.342$): the simplified scorer inverts the ranking there, so TPR collapses below the flagged rate.  This is exactly the failure mode predicted in Section~\ref{sec:th_limitations} when anomalous scores do not dominate normal scores.  The ``Theory expected flagged'' row is the finite-sample bound $\lfloor\alpha(n{+}1)\rfloor/(n{+}1)$ on the \emph{expected} mixed flagged rate; observed rates may sit slightly above it on a finite number of seeds because the theorem is an expectation, not a per-split hard cap.  Across all 30 runs and four $\alpha$ levels, the flagged-rate identity gap is at most $2.8\times 10^{-17}$ (machine zero), confirming internal consistency of every reported FPR/TPR/flagged triple.
 
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{Reproduced results (mean $\pm$ std, 5 seeds) on six datasets from \texttt{results/main\_results.csv}. ``Theory expected flagged'' is $\lfloor\alpha(n{+}1)\rfloor/(n{+}1)$; observed flagged rates are seed means and may exceed it slightly. Max identity gap is the largest absolute violation of Proposition~\ref{prop:flagged} across seeds and $\alpha\in\{0.01,0.02,0.05,0.10\}$.}
 \label{tab:main_results}
@@ -741,21 +741,21 @@ Table~\ref{tab:main_results} reports \emph{our re-runs only} under a shared inje
 \end{table*}
 
 
-\begin{figure}[t]
+\begin{figure}[pos=ht]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig2_fpr_control.png}
 \caption{Empirical FPR versus nominal $\alpha$ on Cora (from \texttt{results/main\_results.csv}); dashed line is $\mathrm{FPR}=\alpha$. See Table~\ref{tab:abl_alpha} and Table~\ref{tab:exp_conformal_compare}.}
 \label{fig:fpr_control}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[pos=ht]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig3_tpr_power.png}
 \caption{Empirical TPR versus nominal $\alpha$ on Cora (from CSV). TPR is not guaranteed; it depends on backbone AUC.}
 \label{fig:tpr_power}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[pos=ht]
 \centering
 \includegraphics[width=\linewidth]{figures/fig4_per_dataset_fpr_tpr.png}
 \caption{Per-dataset conformal AUC from \texttt{results/main\_summary.json} (Table~\ref{tab:main_results}).}
@@ -795,7 +795,7 @@ Experiments use Python~3.13, NumPy/SciPy, and scikit-learn (\texttt{requirements
 \textbf{Reproduce:} \texttt{scripts/run\_experiments.py} $\to$ \texttt{results/main\_results.csv}; tables via \texttt{scripts/generate\_paper\_tables.py}.
 Code: \url{https://github.com/Amaanullakhan/CRC_GAD} (tag \texttt{v1.0-rebuild}).
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Summary statistics of the benchmark datasets.}
 \label{tab:datasets}
@@ -815,7 +815,7 @@ Flickr & 7,575 & 239,738 & 12,047 & 450 & 5.9\% \\
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Key hyperparameters (defaults used across datasets unless noted).}
 \label{tab:hyperparams}
@@ -841,7 +841,7 @@ Random seeds & $\{0,1,2,3,4\}$ (5 runs) \\
 
 To understand the sensitivity of CRC-GAD to its design choices and to validate the contribution of each component, we conduct a series of ablation experiments.  Unless stated otherwise, all ablations are performed on the Cora dataset with 5 independent runs (seeds $\{0,1,2,3,4\}$) and the default hyperparameters from Table~\ref{tab:hyperparams}.  We report mean $\pm$ standard deviation for all metrics.
 
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{Ablation on Cora (mean $\pm$ std, 5 seeds; from \texttt{results/main\_results.csv}).}
 \label{tab:abl_components}
@@ -870,7 +870,7 @@ We select checkpoints by validation AUC with patience $P=10$ (Section~\ref{sec:e
 \label{sec:abl_alpha}
 
 Finally, we examine CRC-GAD's behavior across significance levels $\alpha \in \{0.01,0.02,0.05,0.10\}$ and measure empirical FPR and TPR on Cora, averaged over 5 runs.
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{FPR/TPR vs.\ $\alpha$ on Cora (mean $\pm$ std over 5 seeds; auto-generated).}
 \label{tab:abl_alpha}
@@ -884,7 +884,7 @@ Table~\ref{tab:abl_alpha} reports empirical FPR and TPR from \texttt{results/mai
 
 On Cora at $\alpha=0.05$ (Table~\ref{tab:exp_conformal_compare}; mean$\pm$std over seeds $\{0,\ldots,4\}$), we compare: (i)~\textbf{CRC-GAD} on contrastive graph scores; (ii)~\textbf{percentile} thresholding of raw scores; (iii)~\textbf{feature-space split conformal}~\cite{bates2023testing}, which treats node features as i.i.d.\ vectors and ignores graph structure; and (iv)~\textbf{uniform random scores + split CP}, a negative control that isolates the conformal layer from backbone discrimination. All methods report FPR, TPR, and flagged rate.
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Heuristic comparison on Cora ($\alpha=0.05$; mean$\pm$std over 5 seeds). Full multi-dataset view also in Table~\ref{tab:heuristics_multi}.}
 \label{tab:exp_conformal_compare}
@@ -892,7 +892,7 @@ On Cora at $\alpha=0.05$ (Table~\ref{tab:exp_conformal_compare}; mean$\pm$std ov
 \resizebox{\linewidth}{!}{\input{generated/heuristics.tex}}
 \end{table}
 
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{Heuristic comparison across Planetoid graphs ($\alpha=0.05$; mean$\pm$std, 5 seeds).}
 \label{tab:heuristics_multi}
@@ -907,7 +907,7 @@ The comparison is diagnostic rather than a claim of TPR superiority. Feature-spa
 
 To quantify partition variance under graph dependence, we report empirical FPR@0.05 on Cora across \textbf{200 random} calibration--test splits per edge-rewiring level (0\%--60\%), holding the frozen score vector fixed. Marginal FPR tracking alone cannot falsify dependence; the relevant diagnostic is the \emph{distribution} of empirical FPR across partitions.
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{FPR@0.05 variance under edge rewiring + 200 random splits per seed (Cora; mean over seeds $\{0,\ldots,4\}$).}
 \label{tab:dependence}
@@ -922,14 +922,14 @@ FPR remains near $\alpha=0.05$ on average with non-trivial spread (5th--95th per
 
 We vary the anomaly fraction $\pi_{\mathcal{C}}$ in $\mathcal{C}$ on Cora ($\alpha=0.05$) by replacing calibration normals with anomalous nodes, holding the frozen scorer and test set fixed.
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Calibration-set contamination on Cora ($\alpha = 0.05$; mean$\pm$std over 5 seeds; \texttt{scripts/run\_studies.py}).}
 \label{tab:abl_contamination}
 \footnotesize
 \resizebox{\linewidth}{!}{\input{generated/contamination.tex}}
 \end{table}
-\begin{figure}[t]
+\begin{figure}[pos=ht]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig_contamination.png}
 \caption{Calibration-set contamination on Cora ($\alpha=0.05$): empirical FPR among normal test nodes versus anomaly fraction $\pi_{\mathcal{C}}$ in the calibration set (from \texttt{results/studies.csv}).}
@@ -938,7 +938,7 @@ We vary the anomaly fraction $\pi_{\mathcal{C}}$ in $\mathcal{C}$ on Cora ($\alp
 
 Table~\ref{tab:abl_contamination} shows FPR among normals \emph{decreases} as $\pi_{\mathcal{C}}$ increases---consistent with the score convention (higher $s$ = more anomalous) and Section~\ref{sec:th_limitations}. At $\pi_{\mathcal{C}}=0.20$ the conformal AUC collapses to $0.5$ because the contamination protocol moves so many anomalies into $\mathcal{C}$ that the test set retains too few positives for a meaningful ranking metric; FPR among remaining normals remains well-defined and continues the conservative trend. Extended multi-dataset contamination (Cora/Citeseer/PubMed, $\pi_{\mathcal{C}}$ up to $0.30$) is in Table~\ref{tab:contamination_multi}.
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Multi-dataset contamination: normal-node FPR@0.05 vs.\ $\pi_{\mathcal{C}}$ (mean$\pm$std, 5 seeds).}
 \label{tab:contamination_multi}
@@ -950,7 +950,7 @@ Table~\ref{tab:abl_contamination} shows FPR among normals \emph{decreases} as $\
 
 To substantiate the backbone-agnostic claim, we wrap scorers with the same CRC-GAD layer on Cora, Citeseer, and PubMed (seeds $\{0,\ldots,4\}$): simplified CoLA-inspired contrastive, \textbf{PyTorch DOMINANT} (shared GCN encoder + attribute/structure decoders following~\cite{ding2019dominant} and the authors' public PyTorch layout), a lighter NumPy DOMINANT-style reconstruction scorer, plus degree, feature-norm, and attribute-deviation heuristics (Table~\ref{tab:backbones}). The point is not that every backbone attains high AUC---several structural/attribute heuristics are weak by design---but that conformal FPR semantics attach to whatever score vector is supplied. Wall-clock scoring+calibration times are reported in the same table.
 
-\begin{table*}[t]
+\begin{table*}[pos=t]
 \centering
 \caption{CRC-GAD on multiple backbones (mean$\pm$std over 5 seeds; $\alpha=0.05$). Generated from \texttt{results/extended\_studies.csv} and \texttt{results/dominant\_pytorch.csv}. Row \texttt{dominant} is a PyTorch reimplementation of Ding et al.\ (shared GCN encoder, attribute decoder, $A{=}ZZ^\top$ structure decoder); \texttt{dominant\_style} is the lighter NumPy reconstruction scorer.}
 \label{tab:backbones}
@@ -962,7 +962,7 @@ To substantiate the backbone-agnostic claim, we wrap scorers with the same CRC-G
 
 Global FPR near $\alpha$ can coexist with quartile-level deviations (Table~\ref{tab:degree_fpr}), illustrating the gap between marginal and local behaviour.
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Normal-node FPR@0.05 by degree quartile on Cora (mean$\pm$std, 5 seeds).}
 \label{tab:degree_fpr}
@@ -974,7 +974,7 @@ Global FPR near $\alpha$ can coexist with quartile-level deviations (Table~\ref{
 
 As a non-injected stress test, we mark the rarest Planetoid class on Cora as anomalous (\texttt{organic\_cora}). This is an \emph{organic class-imbalance proxy}, not a fraud label set. Table~\ref{tab:organic} reports CRC-GAD with several backbones under this definition.
 
-\begin{table}[t]
+\begin{table}[pos=t]
 \centering
 \caption{Organic rare-class proxy on Cora (mean$\pm$std, 5 seeds, $\alpha=0.05$).}
 \label{tab:organic}

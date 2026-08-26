@@ -1,4 +1,4 @@
-# ChkTeX config for Elsevier CAS + generated tables
+# ChkTeX: cas-dc uses [pos=t], not classic [htbp]
 CmdLine {
   -n25
   -n44
