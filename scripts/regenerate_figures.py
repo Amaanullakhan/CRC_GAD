@@ -15,6 +15,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 PAPER_FIG = ROOT / "paper" / "figures"
 PAPER_FIG.mkdir(parents=True, exist_ok=True)
+DPI = 400
 
 
 def load_csv(name: str) -> list[dict]:
@@ -43,9 +44,10 @@ def fig_fpr_control(rows: list[dict]):
     ax.plot(alphas, fprs, "o-", label="CRC-GAD (empirical FPR)")
     ax.set_xlabel("Nominal alpha")
     ax.set_ylabel("Empirical FPR")
-    ax.legend()
+    ax.legend(frameon=False)
     ax.grid(alpha=0.3)
-    fig.savefig(PAPER_FIG / "fig2_fpr_control.png", dpi=150, bbox_inches="tight")
+    fig.tight_layout()
+    fig.savefig(PAPER_FIG / "fig2_fpr_control.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
 
 
@@ -61,7 +63,8 @@ def fig_per_dataset(summary_path: Path):
     ax.set_ylabel("Conformal AUC")
     ax.set_title("Per-dataset conformal AUC (from experiments)")
     ax.tick_params(axis="x", rotation=30)
-    fig.savefig(PAPER_FIG / "fig4_per_dataset_fpr_tpr.png", dpi=150, bbox_inches="tight")
+    fig.tight_layout()
+    fig.savefig(PAPER_FIG / "fig4_per_dataset_fpr_tpr.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
 
 
@@ -79,9 +82,10 @@ def fig_contamination(study_rows: list[dict]):
     ax.axhline(0.05, color="k", linestyle="--", label="alpha=0.05")
     ax.set_xlabel("Calibration contamination fraction")
     ax.set_ylabel("FPR@0.05")
-    ax.legend()
+    ax.legend(frameon=False)
     ax.grid(alpha=0.3)
-    fig.savefig(PAPER_FIG / "fig_contamination.png", dpi=150, bbox_inches="tight")
+    fig.tight_layout()
+    fig.savefig(PAPER_FIG / "fig_contamination.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
 
 
@@ -103,9 +107,10 @@ def fig_tpr_power(rows: list[dict]):
     ax.plot(alphas, tprs, "o-", label="CRC-GAD (empirical TPR)")
     ax.set_xlabel("Nominal alpha")
     ax.set_ylabel("Empirical TPR")
-    ax.legend()
+    ax.legend(frameon=False)
     ax.grid(alpha=0.3)
-    fig.savefig(PAPER_FIG / "fig3_tpr_power.png", dpi=150, bbox_inches="tight")
+    fig.tight_layout()
+    fig.savefig(PAPER_FIG / "fig3_tpr_power.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
 
 

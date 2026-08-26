@@ -43,9 +43,9 @@ def arrow(ax, x0, y0, x1, y1, color="#2c3e50"):
 
 def main():
     # Wide figure* aspect; ink-friendly academic palette (slate + teal accent)
-    fig, ax = plt.subplots(figsize=(12.2, 3.55), dpi=220)
+    fig, ax = plt.subplots(figsize=(12.2, 3.7), dpi=400)
     ax.set_xlim(0, 12.2)
-    ax.set_ylim(0, 3.55)
+    ax.set_ylim(0, 3.7)
     ax.axis("off")
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
@@ -61,13 +61,13 @@ def main():
     border3 = "#4a5560"
 
     # Phase bands (leave clear headroom for titles)
-    ax.add_patch(Rectangle((0.15, 0.35), 4.55, 2.7, facecolor="#f7f9fa", edgecolor="none", zorder=0))
-    ax.add_patch(Rectangle((4.85, 0.35), 4.55, 2.7, facecolor="#f3f8f7", edgecolor="none", zorder=0))
-    ax.add_patch(Rectangle((9.55, 0.35), 2.45, 2.7, facecolor="#f5f6f8", edgecolor="none", zorder=0))
+    ax.add_patch(Rectangle((0.15, 0.4), 4.55, 2.7, facecolor="#f7f9fa", edgecolor="none", zorder=0))
+    ax.add_patch(Rectangle((4.85, 0.4), 4.55, 2.7, facecolor="#f3f8f7", edgecolor="none", zorder=0))
+    ax.add_patch(Rectangle((9.55, 0.4), 2.45, 2.7, facecolor="#f5f6f8", edgecolor="none", zorder=0))
 
-    ax.text(2.42, 3.25, "Phase A — Frozen GAD scorer", ha="center", va="center", fontsize=10, fontweight="bold", color=slate)
-    ax.text(7.12, 3.25, "Phase B — CRC-GAD calibration", ha="center", va="center", fontsize=10, fontweight="bold", color=teal)
-    ax.text(10.78, 3.25, "Decision", ha="center", va="center", fontsize=10, fontweight="bold", color=slate)
+    ax.text(2.42, 3.4, "Phase A — Frozen GAD scorer", ha="center", va="center", fontsize=10, fontweight="bold", color=slate)
+    ax.text(7.12, 3.4, "Phase B — CRC-GAD calibration", ha="center", va="center", fontsize=10, fontweight="bold", color=teal)
+    ax.text(10.78, 3.4, "Decision", ha="center", va="center", fontsize=10, fontweight="bold", color=slate)
 
     # --- Phase A boxes ---
     # Input
@@ -141,7 +141,7 @@ def main():
     )
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT, dpi=220, bbox_inches="tight", facecolor="white", pad_inches=0.08)
+    fig.savefig(OUT, dpi=400, bbox_inches="tight", facecolor="white", pad_inches=0.1)
     plt.close(fig)
     print(f"Wrote {OUT}")
 
