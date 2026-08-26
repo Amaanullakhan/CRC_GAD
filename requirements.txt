@@ -5,6 +5,8 @@ matplotlib>=3.7
 pandas>=2.0
 networkx>=3.0
 
-# Optional for full CoLA reproduction (install when long-path enabled on Windows):
+# Optional: PyTorch DOMINANT backbone (scripts/run_dominant_pytorch.py).
+# On Windows Store Python, use a short-path venv if long paths fail, e.g.:
+#   python -m venv C:\t\py\v
+#   C:\t\py\v\Scripts\pip install torch --index-url https://download.pytorch.org/whl/cpu
 # torch>=2.0
-# torch-geometric>=2.3

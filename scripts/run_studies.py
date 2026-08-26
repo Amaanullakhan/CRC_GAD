@@ -151,6 +151,18 @@ def run_heuristics(seed: int, cfg=DEFAULT) -> list[dict]:
         "flagged@0.05": float(flagged.mean()),
     })
 
+    # Trivial uniform-random scorer + same split conformal wrapper (Reviewer #4)
+    random_scores = rng.uniform(0.0, 1.0, size=len(labels))
+    m_rand = compute_metrics(random_scores, labels, part.cal_idx, test_idx, [alpha])
+    ba_rand = m_rand["by_alpha"][alpha]
+    rows.append({
+        "method": "Uniform random + CP",
+        "conformal_auc": m_rand["conformal_auc"],
+        "fpr@0.05": ba_rand["fpr"],
+        "tpr@0.05": ba_rand["tpr"],
+        "flagged@0.05": ba_rand["flagged_rate"],
+    })
+
     for r in rows:
         r["study"] = "heuristics"
         r["seed"] = seed
@@ -159,7 +171,13 @@ def run_heuristics(seed: int, cfg=DEFAULT) -> list[dict]:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=None, help="Single seed (legacy)")
+    parser.add_argument(
+        "--seeds",
+        type=str,
+        default="0,1,2,3,4",
+        help="Comma-separated seeds (default: 0,1,2,3,4)",
+    )
     parser.add_argument("--fast", action="store_true")
     args = parser.parse_args()
     cfg = DEFAULT
@@ -168,12 +186,19 @@ def main():
         cfg.scoring_rounds = 8
         cfg.val_scoring_rounds = 4
 
+    if args.seed is not None:
+        seeds = [args.seed]
+    else:
+        seeds = [int(x) for x in args.seeds.split(",") if x.strip() != ""]
+
     out_dir = ROOT / "results"
     out_dir.mkdir(exist_ok=True)
     all_rows = []
-    all_rows.extend(run_contamination(args.seed, cfg))
-    all_rows.extend(run_dependence(args.seed, cfg))
-    all_rows.extend(run_heuristics(args.seed, cfg))
+    for seed in seeds:
+        print(f"=== studies seed {seed} ===")
+        all_rows.extend(run_contamination(seed, cfg))
+        all_rows.extend(run_dependence(seed, cfg))
+        all_rows.extend(run_heuristics(seed, cfg))
 
     path = out_dir / "studies.csv"
     all_keys = sorted({k for r in all_rows for k in r.keys()})
@@ -181,7 +206,7 @@ def main():
         w = csv.DictWriter(f, fieldnames=all_keys, extrasaction="ignore")
         w.writeheader()
         w.writerows(all_rows)
-    print(f"Wrote {path} ({len(all_rows)} rows)")
+    print(f"Wrote {path} ({len(all_rows)} rows, seeds={seeds})")
 
 
 if __name__ == "__main__":
