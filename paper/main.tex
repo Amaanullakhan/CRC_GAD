@@ -25,6 +25,33 @@
 \hbadness=10000
 \vbadness=10000
 
+% cas-dc packs ARTICLE INFO into \hbox to 0pt (intentional protrusion), always
+% logging Overfull ~123.6pt. Re-wrap with \hss so TeX does not mark it overfull.
+\ExplSyntaxOn
+\RenewDocumentEnvironment { Abstract } { o }
+{
+  \group_begin:
+  \IfNoValueTF { #1 } { }
+  { \gdef\abstractname{#1} }
+  \parindent = 0pt
+  \box_if_empty:NTF \g_stm_key_box
+  { \leftskip = .35 \textwidth }
+  {
+    \dim_gset:Nn \l_tmpa_dim { \box_ht:N \g_stm_key_box }
+    \dim_gadd:Nn \l_tmpa_dim { \box_dp:N \g_stm_key_box }
+    \leftskip = .35 \textwidth
+    \hspace*{-.35 \textwidth }
+    \noindent \hbox_to_wd:nn { 0pt } { \box_use_drop:N \g_stm_key_box \hss }
+    \skip_vertical:n { -\l_tmpa_dim }
+  }
+  \noindent \abstractname \par
+  \skip_vertical:n { -4pt }
+  \noindent \rule{.65\textwidth}{.2pt} \par \footnotesize
+  \ignorespaces \everypar { \parindent = 1.5em }
+}
+{ \par \group_end: }
+\ExplSyntaxOff
+
 \renewcommand{\topfraction}{0.95}
 \renewcommand{\bottomfraction}{0.90}
 \renewcommand{\textfraction}{0.05}
@@ -107,11 +134,11 @@ Post-hoc score calibration
 \end{keywords}
 
 \begin{highlights}
-\item CRC-GAD is a post-hoc calibration wrapper, not a new CoLA/DOMINANT detector.
-\item It maps any frozen graph anomaly scores to split conformal p-values.
-\item The proven guarantee is marginal over a random test node and partition, not conditional FPR.
-\item Normal-node FPR needs an extra score-dominance bridge and can fail when ranking inverts.
-\item The same wrapper is validated on PyTorch DOMINANT, a CoLA-style scorer, and heuristics.
+\item CRC-GAD is a post-hoc split conformal wrapper, not a new detector.
+\item Proven guarantee: marginal random-test-node validity, not conditional FPR.
+\item Normal-node FPR needs a score-dominance bridge and can fail if ranking inverts.
+\item Same wrapper validated on DOMINANT, CoLA-style, and heuristic scorers.
+\item All tables regenerate from commit-pinned code.
 \end{highlights}
 
 \maketitle
@@ -741,21 +768,21 @@ Table~\ref{tab:main_results} reports \emph{our re-runs only} under a shared inje
 \end{table*}
 
 
-\begin{figure}[pos=ht]
+\begin{figure}[pos=t]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig2_fpr_control.png}
 \caption{Empirical FPR versus nominal $\alpha$ on Cora (from \texttt{results/main\_results.csv}); dashed line is $\mathrm{FPR}=\alpha$. See Table~\ref{tab:abl_alpha} and Table~\ref{tab:exp_conformal_compare}.}
 \label{fig:fpr_control}
 \end{figure}
 
-\begin{figure}[pos=ht]
+\begin{figure}[pos=t]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/fig3_tpr_power.png}
 \caption{Empirical TPR versus nominal $\alpha$ on Cora (from CSV). TPR is not guaranteed; it depends on backbone AUC.}
 \label{fig:tpr_power}
 \end{figure}
 
-\begin{figure}[pos=ht]
+\begin{figure}[pos=t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig4_per_dataset_fpr_tpr.png}
 \caption{Per-dataset conformal AUC from \texttt{results/main\_summary.json} (Table~\ref{tab:main_results}).}
@@ -929,7 +956,7 @@ We vary the anomaly fraction $\pi_{\mathcal{C}}$ in $\mathcal{C}$ on Cora ($\alp
 \footnotesize
 \resizebox{\linewidth}{!}{\input{generated/contamination.tex}}
 \end{table}
-\begin{figure}[pos=ht]
+\begin{figure}[pos=t]
 \centering
 \includegraphics[width=0.85\linewidth]{figures/fig_contamination.png}
 \caption{Calibration-set contamination on Cora ($\alpha=0.05$): empirical FPR among normal test nodes versus anomaly fraction $\pi_{\mathcal{C}}$ in the calibration set (from \texttt{results/studies.csv}).}
