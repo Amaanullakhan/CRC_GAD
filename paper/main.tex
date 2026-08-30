@@ -5,7 +5,8 @@
 \pdfcompresslevel=9
 \pdfobjcompresslevel=3
 \usepackage{amsmath,amssymb}
-\usepackage{microtype}
+% expansion=false: cas-dc+STIX font expansion routinely exceeds Overleaf free compile time
+\usepackage[protrusion=true,expansion=false,tracking=false,spacing=false,kerning=false]{microtype}
 \usepackage{xcolor}
 \usepackage{amsthm}
 \theoremstyle{definition}

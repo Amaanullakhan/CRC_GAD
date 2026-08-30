@@ -43,7 +43,7 @@ def arrow(ax, x0, y0, x1, y1, color="#2c3e50"):
 
 def main():
     # Wide figure* aspect; ink-friendly academic palette (slate + teal accent)
-    fig, ax = plt.subplots(figsize=(12.2, 3.7), dpi=400)
+    fig, ax = plt.subplots(figsize=(12.2, 3.7), dpi=250)
     ax.set_xlim(0, 12.2)
     ax.set_ylim(0, 3.7)
     ax.axis("off")
@@ -141,7 +141,7 @@ def main():
     )
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT, dpi=400, bbox_inches="tight", facecolor="white", pad_inches=0.1)
+    fig.savefig(OUT, dpi=250, bbox_inches="tight", facecolor="white", pad_inches=0.1)
     plt.close(fig)
     print(f"Wrote {OUT}")
 

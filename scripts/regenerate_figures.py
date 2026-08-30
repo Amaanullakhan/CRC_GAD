@@ -15,7 +15,8 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 PAPER_FIG = ROOT / "paper" / "figures"
 PAPER_FIG.mkdir(parents=True, exist_ok=True)
-DPI = 400
+# 250 DPI RGB is enough for review/Overleaf; avoid huge RGBA bitmaps that slow pdfTeX.
+DPI = 250
 
 
 def load_csv(name: str) -> list[dict]:
@@ -47,7 +48,7 @@ def fig_fpr_control(rows: list[dict]):
     ax.legend(frameon=False)
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(PAPER_FIG / "fig2_fpr_control.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
+    fig.savefig(PAPER_FIG / "fig2_fpr_control.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08, facecolor="white")
     plt.close(fig)
 
 
@@ -64,7 +65,7 @@ def fig_per_dataset(summary_path: Path):
     ax.set_title("Per-dataset conformal AUC (from experiments)")
     ax.tick_params(axis="x", rotation=30)
     fig.tight_layout()
-    fig.savefig(PAPER_FIG / "fig4_per_dataset_fpr_tpr.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
+    fig.savefig(PAPER_FIG / "fig4_per_dataset_fpr_tpr.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08, facecolor="white")
     plt.close(fig)
 
 
@@ -85,7 +86,7 @@ def fig_contamination(study_rows: list[dict]):
     ax.legend(frameon=False)
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(PAPER_FIG / "fig_contamination.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
+    fig.savefig(PAPER_FIG / "fig_contamination.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08, facecolor="white")
     plt.close(fig)
 
 
@@ -110,7 +111,7 @@ def fig_tpr_power(rows: list[dict]):
     ax.legend(frameon=False)
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(PAPER_FIG / "fig3_tpr_power.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08)
+    fig.savefig(PAPER_FIG / "fig3_tpr_power.png", dpi=DPI, bbox_inches="tight", pad_inches=0.08, facecolor="white")
     plt.close(fig)
 
 
