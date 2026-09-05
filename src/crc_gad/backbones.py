@@ -118,9 +118,22 @@ def score_dominant_pytorch_wrapper(
     return score_dominant_pytorch(features, adj, rng, **kwargs)
 
 
+def score_conad_pytorch_wrapper(
+    features: np.ndarray,
+    adj: sp.spmatrix,
+    rng: np.random.Generator,
+    **kwargs,
+) -> np.ndarray:
+    """CONAD-style Siamese contrastive backbone (Xu et al. 2022 principle)."""
+    from .conad_torch import score_conad_pytorch
+
+    return score_conad_pytorch(features, adj, rng, **kwargs)
+
+
 BACKBONES: dict[str, Callable] = {
     "cola": score_cola,
     "dominant": score_dominant_pytorch_wrapper,
+    "conad": score_conad_pytorch_wrapper,
     "dominant_style": score_dominant_style,
     "degree": score_degree,
     "feature_norm": score_feature_norm,

@@ -198,32 +198,59 @@ def run_contamination_multi(seeds, datasets, cfg) -> list[dict]:
     return rows
 
 
-def run_organic(seeds, cfg) -> list[dict]:
+def run_organic(seeds, cfg, datasets=None) -> list[dict]:
+    """Organic (non-injected) labels: rare-class Planetoid proxies + optional YelpChi fraud."""
+    if datasets is None:
+        datasets = ["organic_cora", "organic_citeseer", "yelpchi"]
     rows = []
-    for seed in seeds:
-        rng = np.random.default_rng(seed)
-        features, adj, labels = load_dataset("organic_cora")
-        part = make_partition(
-            len(labels), labels, cfg.train_frac, cfg.val_frac_of_remain, cfg.rho, rng
+    for dataset in datasets:
+        try:
+            features0, adj0, labels0 = load_dataset(dataset)
+        except Exception as e:
+            print(f"SKIP organic dataset {dataset}: {e}", flush=True)
+            continue
+        # Large fraud graphs: heuristics only (full CoLA/DOMINANT-style is too heavy on CPU)
+        if dataset in ("yelpchi", "yelp", "yelp_chi") or features0.shape[0] > 15000:
+            organic_backbones = ["degree", "feature_norm", "attr_deviation"]
+        else:
+            organic_backbones = ["cola", "dominant_style", "attr_deviation", "degree"]
+        print(
+            f"organic dataset={dataset} n={features0.shape[0]} "
+            f"anom_rate={labels0.mean():.3f} backbones={organic_backbones}",
+            flush=True,
         )
-        for name in ["cola", "dominant_style", "attr_deviation", "degree"]:
-            t0 = time.perf_counter()
-            scores = get_scores(
-                name, features, adj, rng,
-                train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=cfg,
-                epochs=40 if cfg.max_epochs <= 40 else 80,
+        for seed in seeds:
+            rng = np.random.default_rng(seed)
+            features, adj, labels = features0, adj0, labels0
+            part = make_partition(
+                len(labels), labels, cfg.train_frac, cfg.val_frac_of_remain, cfg.rho, rng
             )
-            elapsed = time.perf_counter() - t0
-            m = compute_metrics(scores, labels, part.cal_idx, part.test_idx, [0.05])
-            ba = m["by_alpha"][0.05]
-            rows.append({
-                "study": "organic", "dataset": "organic_cora", "seed": seed,
-                "backbone": name, "anomaly_rate": float(labels.mean()),
-                "raw_auc_all": m["raw_auc_all"], "conformal_auc": m["conformal_auc"],
-                "fpr@0.05": ba["fpr"], "tpr@0.05": ba["tpr"],
-                "flagged@0.05": ba["flagged_rate"], "runtime_s": elapsed,
-            })
-            print(f"organic {name} seed={seed} AUC={m['raw_auc_all']:.3f} FPR={ba['fpr']:.3f}", flush=True)
+            for name in organic_backbones:
+                t0 = time.perf_counter()
+                try:
+                    scores = get_scores(
+                        name, features, adj, rng,
+                        train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=cfg,
+                        epochs=40 if cfg.max_epochs <= 40 else 80,
+                    )
+                except Exception as e:
+                    print(f"FAIL organic {name} {dataset} seed={seed}: {e}", flush=True)
+                    continue
+                elapsed = time.perf_counter() - t0
+                m = compute_metrics(scores, labels, part.cal_idx, part.test_idx, [0.05])
+                ba = m["by_alpha"][0.05]
+                rows.append({
+                    "study": "organic", "dataset": dataset, "seed": seed,
+                    "backbone": name, "anomaly_rate": float(labels.mean()),
+                    "raw_auc_all": m["raw_auc_all"], "conformal_auc": m["conformal_auc"],
+                    "fpr@0.05": ba["fpr"], "tpr@0.05": ba["tpr"],
+                    "flagged@0.05": ba["flagged_rate"], "runtime_s": elapsed,
+                })
+                print(
+                    f"organic {dataset} {name} seed={seed} "
+                    f"AUC={m['raw_auc_all']:.3f} FPR={ba['fpr']:.3f}",
+                    flush=True,
+                )
     return rows
 
 
@@ -261,7 +288,11 @@ def main():
     if "organic" in only:
         all_rows.extend(run_organic(seeds, cfg))
 
-    out = ROOT / "results" / "extended_studies.csv"
+    # Avoid wiping extended_studies.csv when refreshing only organic rows
+    if only == {"organic"}:
+        out = ROOT / "results" / "organic_studies.csv"
+    else:
+        out = ROOT / "results" / "extended_studies.csv"
     out.parent.mkdir(exist_ok=True)
     keys = sorted({k for r in all_rows for k in r})
     with open(out, "w", newline="", encoding="utf-8") as f:

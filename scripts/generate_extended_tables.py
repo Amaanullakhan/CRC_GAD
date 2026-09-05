@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "paper" / "generated"
 EXT = ROOT / "results" / "extended_studies.csv"
 DOM = ROOT / "results" / "dominant_pytorch.csv"
+CONAD = ROOT / "results" / "conad_pytorch.csv"
+ORG = ROOT / "results" / "organic_studies.csv"
 
 
 def ms(vals):
@@ -30,12 +32,11 @@ def tex_id(s: str) -> str:
 
 def load():
     rows = []
-    if EXT.exists():
-        rows.extend(csv.DictReader(open(EXT, encoding="utf-8")))
-    if DOM.exists():
-        rows.extend(csv.DictReader(open(DOM, encoding="utf-8")))
+    for path in (EXT, DOM, CONAD, ORG):
+        if path.exists():
+            rows.extend(csv.DictReader(open(path, encoding="utf-8")))
     if not rows:
-        print(f"Missing {EXT} and {DOM}")
+        print(f"Missing result CSVs under {ROOT / 'results'}")
     return rows
 
 
@@ -51,7 +52,10 @@ def gen_backbones(rows):
         write("backbones.tex", "\\begin{tabular}{c}\\toprule TBD\\\\\\bottomrule\\end{tabular}\n")
         return
     datasets = sorted({r["dataset"] for r in rows})
-    backbones = ["cola", "dominant", "dominant_style", "degree", "feature_norm", "attr_deviation"]
+    backbones = [
+        "cola", "dominant", "conad", "dominant_style",
+        "degree", "feature_norm", "attr_deviation",
+    ]
     lines = [
         "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{ll" + "c" * len(datasets) + "}",
@@ -60,6 +64,8 @@ def gen_backbones(rows):
         "\\midrule",
     ]
     for bb in backbones:
+        if not any(r["backbone"] == bb for r in rows):
+            continue
         for metric, key in [
             ("Raw AUC", "raw_auc_all"),
             ("FPR@0.05", "fpr@0.05"),
@@ -92,19 +98,27 @@ def gen_degree(rows):
 
 def gen_organic(rows):
     rows = [r for r in rows if r.get("study") == "organic"]
+    if not rows:
+        write("organic.tex", "\\begin{tabular}{c}\\toprule TBD\\\\\\bottomrule\\end{tabular}\n")
+        return
+    datasets = sorted({r["dataset"] for r in rows})
+    backbones = sorted({r["backbone"] for r in rows})
+    # Multi-dataset organic table: Backbone x (AUC/FPR per dataset)
     lines = [
-        "\\begin{tabular}{lcccc}",
+        "\\resizebox{\\linewidth}{!}{%",
+        "\\begin{tabular}{l" + "cc" * len(datasets) + "}",
         "\\toprule",
-        "Backbone & Raw AUC & FPR@0.05 & TPR@0.05 & Time (s) \\\\",
+        "Backbone & " + " & ".join(f"{tex_id(d)} AUC & FPR" for d in datasets) + " \\\\",
         "\\midrule",
     ]
-    for bb in sorted({r["backbone"] for r in rows}):
-        sub = [r for r in rows if r["backbone"] == bb]
-        lines.append(
-            f"{tex_id(bb)} & {ms([r['raw_auc_all'] for r in sub])} & {ms([r['fpr@0.05'] for r in sub])} & "
-            f"{ms([r['tpr@0.05'] for r in sub])} & {ms([r['runtime_s'] for r in sub])} \\\\"
-        )
-    lines += ["\\bottomrule", "\\end{tabular}"]
+    for bb in backbones:
+        cells = []
+        for d in datasets:
+            sub = [r for r in rows if r["backbone"] == bb and r["dataset"] == d]
+            cells.append(ms([r["raw_auc_all"] for r in sub]))
+            cells.append(ms([r["fpr@0.05"] for r in sub]))
+        lines.append(f"{tex_id(bb)} & " + " & ".join(cells) + " \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}", "}"]
     write("organic.tex", "\n".join(lines) + "\n")
 
 

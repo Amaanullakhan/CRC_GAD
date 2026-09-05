@@ -121,7 +121,7 @@ Given any frozen scoring function, CRC-GAD draws a label-free random calibration
 This is a \emph{marginal, random-test-node} validity statement. It is \emph{not} a node-conditional FPR guarantee, and it is not automatically identical to the empirical false-positive rate among normal nodes.
 \textbf{What transfers to normal-node FPR.} When anomalous scores stochastically dominate normal scores, the random-test-node bound implies a conservative bound on expected normal-node FPR; when the backbone inverts the ranking, that bridge can fail (Section~\ref{sec:th_limitations}).
 We further derive a flagged-rate identity that makes every reported (FPR, TPR, anomaly fraction) triple auditable.
-Experiments apply the \emph{same} wrapper to multiple scorers (PyTorch DOMINANT, a simplified CoLA-inspired contrastive scorer used only as one backbone, degree, and attribute baselines), expand heuristic comparisons beyond a single graph, and report contamination and degree-stratified diagnostics plus an organic rare-class proxy on Cora.
+Experiments apply the \emph{same} wrapper to multiple scorers (PyTorch DOMINANT, a CONAD-style Siamese contrastive scorer, a simplified CoLA-inspired scorer, and degree/attribute baselines), expand heuristic comparisons beyond a single graph, and report contamination and degree-stratified diagnostics plus organic evaluations on rare-class Planetoid proxies and the YelpChi fraud graph.
 All numbers regenerate from commit-pinned code (\url{https://github.com/Amaanullakhan/CRC_GAD}).
 \end{abstract}
 
@@ -178,7 +178,7 @@ Although conformal methods have been applied to classification~\cite{romano2020c
 
 Specifically, CRC-GAD proceeds as follows:
 \begin{enumerate}
-  \item \textbf{Unsupervised scoring (any backbone).} Obtain frozen node anomaly scores $\{s_i\}$ from any score-based detector. For the primary tables we use a simplified CoLA-inspired contrastive scorer~\cite{liu2022cola}; Table~\ref{tab:backbones} also wraps PyTorch DOMINANT and heuristic scorers with the \emph{identical} conformal layer.
+  \item \textbf{Unsupervised scoring (any backbone).} Obtain frozen node anomaly scores $\{s_i\}$ from any score-based detector. For the primary tables we use a simplified CoLA-inspired contrastive scorer~\cite{liu2022cola}; Table~\ref{tab:backbones} also wraps PyTorch DOMINANT, a CONAD-style Siamese contrastive scorer~\cite{xu2022conad}, and heuristic scorers with the \emph{identical} conformal layer.
   \item \textbf{Random partition.} Split evaluation nodes, without using scores or labels, into a calibration set $\mathcal{C}$ and a test set $\mathcal{T}$ (Section~\ref{sec:prob_fpr}).
   \item \textbf{Conformal p-values.} For each $i \in \mathcal{T}$, assign $p_i$ by ranking $s_i$ against $\{s_j\}_{j \in \mathcal{C}}$ as in Eq.~\eqref{eq:pvalue_formal}.
   \item \textbf{Decision.} Flag $i$ if $p_i \leq \alpha$ for user-chosen $\alpha$.
@@ -190,7 +190,7 @@ The main contributions of this paper are as follows:
   \item We formalize the \emph{calibration gap} in unsupervised graph anomaly detection and cast false-positive budgeting as a split conformal inference problem on graph-structured scores, so an operator can specify a nominal alarm level $\alpha$ instead of an uninterpretable score threshold.
   \item We establish \emph{random-test-node} validity under random calibration--test partitioning (Theorem~\ref{thm:randomization}), carefully distinguishing it from normal-node FPR and from node-conditional guarantees.
   \item We derive the flagged-rate identity (Proposition~\ref{prop:flagged}) and the contamination bias direction, and we validate both empirically.
-  \item We instantiate CRC-GAD on multiple backbones (PyTorch DOMINANT~\cite{ding2019dominant}, a simplified CoLA-inspired contrastive scorer as one option, degree, and attribute baselines), expand heuristic comparisons beyond Cora, report degree-stratified FPR and runtimes, and include an organic rare-class proxy experiment (Sections~\ref{sec:exp_conformal_compare}--\ref{sec:abl_contamination}).
+  \item We instantiate CRC-GAD on multiple backbones (PyTorch DOMINANT~\cite{ding2019dominant}, a CONAD-style Siamese contrastive scorer~\cite{xu2022conad}, a simplified CoLA-inspired scorer, and degree/attribute baselines), expand heuristic comparisons beyond Cora, report degree-stratified FPR and runtimes, and evaluate organic (non-injected) labels on rare-class Planetoid proxies and YelpChi fraud (Sections~\ref{sec:exp_conformal_compare}--\ref{sec:abl_organic}).
 \end{enumerate}
 Section~\ref{sec:related} reviews related work; Section~\ref{sec:problem}--\ref{sec:method} formalize the problem and CRC-GAD; Section~\ref{sec:experiments} reports experiments; Section~\ref{sec:conclusion} concludes.
 
@@ -513,7 +513,7 @@ To support both early stopping and conformal calibration, the node set $\mathcal
 \subsection{Contrastive Learning Module}
 \label{sec:meth_training}
 
-The contrastive module is an \emph{optional default backbone} for $f_\theta$, not the contribution of CRC-GAD.  It follows the \emph{scoring principle} of~\cite{liu2022cola} (Eq.~\eqref{eq:cola_score}): multi-round positive--negative context disagreement.  \textbf{Attribution and scope:} CoLA~\cite{liu2022cola} is prior work; we do not claim it as ours.  Our pinned code (\texttt{src/crc\_gad/scorer.py}) uses a \emph{simplified CoLA-inspired} NumPy GCN scorer---two-layer message passing, neighbor-mean positive context, random negative context, and validation-AUC early stopping---rather than the full PyTorch RWR subgraph + bilinear discriminator pipeline.  Section~\ref{sec:prob_contrastive_scoring} states the CoLA reference formulation for context; primary CoLA-style numbers use the simplified scorer, while Table~\ref{tab:backbones} shows the conformal wrapper also on PyTorch DOMINANT.
+The contrastive module is an \emph{optional default backbone} for $f_\theta$, not the contribution of CRC-GAD.  It follows the \emph{scoring principle} of~\cite{liu2022cola} (Eq.~\eqref{eq:cola_score}): multi-round positive--negative context disagreement.  \textbf{Attribution and scope:} CoLA~\cite{liu2022cola} is prior work; we do not claim it as ours.  Our pinned code (\texttt{src/crc\_gad/scorer.py}) uses a \emph{simplified CoLA-inspired} NumPy GCN scorer---two-layer message passing, neighbor-mean positive context, random negative context, and validation-AUC early stopping---rather than the full PyTorch RWR subgraph + bilinear discriminator pipeline.  Section~\ref{sec:prob_contrastive_scoring} states the CoLA reference formulation for context; primary CoLA-style numbers use the simplified scorer, while Table~\ref{tab:backbones} shows the conformal wrapper also on PyTorch DOMINANT and a CONAD-style Siamese contrastive scorer.
 
 \paragraph{Encoder and scoring.}
 A two-layer GCN encoder maps normalized node features through $\hat{\mathbf{A}}$ (Eq.~\eqref{eq:adj_norm}).  For each node $v_i$, a positive context vector aggregates normalized neighbor embeddings; over $R$ rounds, negative contexts are drawn by permuting node embeddings.  The anomaly score averages the gap ``negative agreement minus positive agreement'' (Eq.~\eqref{eq:cola_score}, simplified).  Training updates the final layer with a lightweight contrastive signal on mini-batches from $\mathcal{V}_{\text{train}}$; checkpoint selection uses validation AUC every $E_{\text{val}}$ epochs with patience $P$ (labels used \emph{only} for early stopping, not for conformal calibration).
@@ -747,7 +747,7 @@ We describe datasets and anomaly injection (Section~\ref{sec:exp_datasets}--\ref
 \subsection{Datasets}
 \label{sec:exp_datasets}
 
-We evaluate CRC-GAD on six injected benchmark attributed networks: Cora, Citeseer, PubMed, ACM, BlogCatalog, and Flickr.  Table~\ref{tab:datasets} summarizes statistics.  Node features and anomaly injection follow~\cite{ding2019dominant,liu2022cola}.  ACM and Flickr load from \texttt{data/*.mat} (see \texttt{scripts/download\_datasets.py}); BlogCatalog requires the same \texttt{.mat} file---download manually if the mirror is unreachable.  As an organic proxy (not fraud labels), Section~\ref{sec:abl_organic} treats the rarest Planetoid class on Cora as the anomaly class.  Large-scale (ogbn-arxiv) and true organic-label (YelpChi) benchmarks remain future work under the same pinned protocol.
+We evaluate CRC-GAD on six injected benchmark attributed networks: Cora, Citeseer, PubMed, ACM, BlogCatalog, and Flickr.  Table~\ref{tab:datasets} summarizes statistics.  Node features and anomaly injection follow~\cite{ding2019dominant,liu2022cola}.  ACM and Flickr load from \texttt{data/*.mat} (see \texttt{scripts/download\_datasets.py}); BlogCatalog requires the same \texttt{.mat} file---download manually if the mirror is unreachable.  Beyond injection, Section~\ref{sec:abl_organic} reports \emph{organic} (non-injected) labels: rarest-class Planetoid proxies on Cora/Citeseer and the YelpChi review-fraud graph with real fraud labels~\cite{xu2022conad}.  Large-scale citation graphs such as ogbn-arxiv remain optional stress tests under the same pinned protocol.
 
 \subsection{Anomaly Injection}
 \label{sec:exp_injection}
@@ -757,7 +757,7 @@ Following~\cite{ding2019dominant,liu2022cola}, we inject structural (dense cliqu
 \subsection{Baseline Methods}
 \label{sec:exp_baselines}
 
-Table~\ref{tab:main_results} reports \emph{our re-runs only} under a shared injected-anomaly protocol (seeds $\{0,\ldots,4\}$); we do not copy literature AUC values.  Row ``CoLA backbone'' is raw AUC from the frozen \emph{simplified} contrastive scorer (Section~\ref{sec:meth_training}); ``CRC-GAD'' adds conformal AUC and calibration metrics at $\alpha=0.05$, including flagged rate (Proposition~\ref{prop:flagged}).  Table~\ref{tab:backbones} wraps the same CRC-GAD layer around a \emph{PyTorch DOMINANT} reimplementation matching Ding et al.'s architecture~\cite{ding2019dominant}, a lighter NumPy DOMINANT-style scorer, and degree/attribute heuristics. Full CONAD re-runs under identical injection remain complementary future work.
+Table~\ref{tab:main_results} reports \emph{our re-runs only} under a shared injected-anomaly protocol (seeds $\{0,\ldots,4\}$); we do not copy literature AUC values.  Row ``CoLA backbone'' is raw AUC from the frozen \emph{simplified} contrastive scorer (Section~\ref{sec:meth_training}); ``CRC-GAD'' adds conformal AUC and calibration metrics at $\alpha=0.05$, including flagged rate (Proposition~\ref{prop:flagged}).  Table~\ref{tab:backbones} wraps the same CRC-GAD layer around a \emph{PyTorch DOMINANT} reimplementation matching Ding et al.'s architecture~\cite{ding2019dominant}, a \emph{CONAD-style} Siamese contrastive scorer with anomaly-prior augmentations~\cite{xu2022conad}, a lighter NumPy DOMINANT-style scorer, and degree/attribute heuristics.
 
 \textbf{Reading the table.} Empirical FPR tracks $\alpha{=}0.05$ on Cora, Citeseer, PubMed, and Flickr, but exceeds $\alpha$ on ACM ($0.051$) and BlogCatalog ($0.055$).  Backbone AUC is strong on Planetoid graphs yet \emph{below chance} on BlogCatalog ($0.365$) and Flickr ($0.342$): the simplified scorer inverts the ranking there, so TPR collapses below the flagged rate.  This is exactly the failure mode predicted in Section~\ref{sec:th_limitations} when anomalous scores do not dominate normal scores.  The ``Theory expected flagged'' row is the finite-sample bound $\lfloor\alpha(n{+}1)\rfloor/(n{+}1)$ on the \emph{expected} mixed flagged rate; observed rates may sit slightly above it on a finite number of seeds because the theorem is an expectation, not a per-split hard cap.  Across all 30 runs and four $\alpha$ levels, the flagged-rate identity gap is at most $2.8\times 10^{-17}$ (machine zero), confirming internal consistency of every reported FPR/TPR/flagged triple.
 
@@ -839,6 +839,7 @@ Pubmed & 19,717 & 44,338 & 500 & 600 & 3.0\% \\
 ACM & 16,484 & 71,980 & 8,337 & 600 & 3.6\% \\
 BlogCatalog & 5,196 & 171,743 & 8,189 & 300 & 5.8\% \\
 Flickr & 7,575 & 239,738 & 12,047 & 450 & 5.9\% \\
+YelpChi (organic) & 45,954 & $\sim$3.8M & 32 & 6,677 & 14.5\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -976,11 +977,11 @@ Table~\ref{tab:abl_contamination} shows FPR among normals \emph{decreases} as $\
 \subsubsection{Multiple Backbones under One Wrapper}
 \label{sec:abl_backbones}
 
-To substantiate the backbone-agnostic claim, we wrap scorers with the same CRC-GAD layer on Cora, Citeseer, and PubMed (seeds $\{0,\ldots,4\}$): simplified CoLA-inspired contrastive, \textbf{PyTorch DOMINANT} (shared GCN encoder + attribute/structure decoders following~\cite{ding2019dominant} and the authors' public PyTorch layout), a lighter NumPy DOMINANT-style reconstruction scorer, plus degree, feature-norm, and attribute-deviation heuristics (Table~\ref{tab:backbones}). The point is not that every backbone attains high AUC---several structural/attribute heuristics are weak by design---but that conformal FPR semantics attach to whatever score vector is supplied. Wall-clock scoring+calibration times are reported in the same table.
+To substantiate the backbone-agnostic claim, we wrap scorers with the same CRC-GAD layer on Cora, Citeseer, and PubMed (seeds $\{0,\ldots,4\}$): simplified CoLA-inspired contrastive, \textbf{PyTorch DOMINANT}, a lighter NumPy DOMINANT-style reconstruction scorer, degree/feature/attribute heuristics, and---where ranking quality meets our keep bar---a \textbf{CONAD-style} Siamese GCN with anomaly-prior augmentations~\cite{xu2022conad} (Table~\ref{tab:backbones}; CONAD-style reported on Cora/Citeseer under the tuned protocol). The point is not that every backbone attains high AUC---several heuristics are weak by design---but that conformal FPR semantics attach to whatever score vector is supplied.
 
 \begin{table*}[pos=t]
 \centering
-\caption{CRC-GAD on multiple backbones (mean$\pm$std over 5 seeds; $\alpha=0.05$). Generated from \texttt{results/extended\_studies.csv} and \texttt{results/dominant\_pytorch.csv}. Row \texttt{dominant} is a PyTorch reimplementation of Ding et al.\ (shared GCN encoder, attribute decoder, $A{=}ZZ^\top$ structure decoder); \texttt{dominant\_style} is the lighter NumPy reconstruction scorer.}
+\caption{CRC-GAD on multiple backbones (mean$\pm$std over 5 seeds; $\alpha=0.05$). From \texttt{extended\_studies.csv}, \texttt{dominant\_pytorch.csv}, and \texttt{conad\_pytorch.csv}. \texttt{conad} is a CONAD-style Siamese+augmentation scorer~\cite{xu2022conad} kept on Cora/Citeseer after a ranking-quality gate (PubMed left as ---).}
 \label{tab:backbones}
 \input{generated/backbones.tex}
 \end{table*}
@@ -997,17 +998,17 @@ Global FPR near $\alpha$ can coexist with quartile-level deviations (Table~\ref{
 \input{generated/degree_fpr.tex}
 \end{table}
 
-\subsubsection{Organic Rare-Class Proxy}
+\subsubsection{Organic Labels: Rare-Class Proxies and YelpChi Fraud}
 \label{sec:abl_organic}
 
-As a non-injected stress test, we mark the rarest Planetoid class on Cora as anomalous (\texttt{organic\_cora}). This is an \emph{organic class-imbalance proxy}, not a fraud label set. Table~\ref{tab:organic} reports CRC-GAD with several backbones under this definition.
+Injected anomalies dominate the main table by design (shared DOMINANT/CoLA protocol). To reduce that dependence, we also evaluate \emph{organic} labels with \textbf{no injection}: (i)~rarest Planetoid class on Cora and Citeseer as class-imbalance proxies; (ii)~YelpChi review-fraud nodes with real fraud labels (homo graph used in CONAD-era fraud-detection benchmarks~\cite{xu2022conad}). Table~\ref{tab:organic} reports CRC-GAD under these definitions. On YelpChi ($\approx$46k nodes) we use scalable heuristic scorers under the same conformal wrapper; training full deep backbones there is an optional heavier extension.
 
 \begin{table}[pos=t]
 \centering
-\caption{Organic rare-class proxy on Cora (mean$\pm$std, 5 seeds, $\alpha=0.05$).}
+\caption{Organic (non-injected) evaluation (mean$\pm$std, 5 seeds, $\alpha=0.05$). Rare-class Planetoid proxies remain near-chance AUC (diagnostic); YelpChi uses real fraud labels with heuristic scorers. FPR near $\alpha$ is the calibration check.}
 \label{tab:organic}
 \footnotesize
-\resizebox{\linewidth}{!}{\input{generated/organic.tex}}
+\input{generated/organic.tex}
 \end{table}
 
 \subsubsection{Comparison with Supervised Conformal Baseline}
@@ -1020,14 +1021,14 @@ Supervised conformal risk control with labeled anomalies~\cite{bates2023testing}
 
 We studied unsupervised graph anomaly \emph{calibration}: how to turn frozen node scores into decisions at a nominal level $\alpha$ with an auditable finite-sample statement.
 \textbf{CRC-GAD} does this by split conformal p-values under a label-free random partition.
-It is a calibration protocol wrapped around existing scorers (including CoLA-style and DOMINANT), not a competitor claiming a new detection architecture.
+It is a calibration protocol wrapped around existing scorers (including CoLA-style, DOMINANT, and CONAD-style), not a competitor claiming a new detection architecture.
 The theorem we prove is \emph{marginal random-test-node validity} (Theorem~\ref{thm:randomization})---not node-conditional FPR, and not an automatic normal-node FPR bound without a ranking/dominance bridge.
 When that bridge fails, empirical FPR can exceed $\alpha$; we report such cases rather than selecting only favourable graphs.
 
-Empirically, the same wrapper applies to multiple scorers, heuristic comparisons extend beyond Cora, contamination and degree-stratified diagnostics quantify where the guarantee is fragile, and an organic rare-class proxy complements injected benchmarks.
+Empirically, the same wrapper applies to multiple scorers (including CONAD-style), heuristic comparisons extend beyond Cora, contamination and degree-stratified diagnostics quantify where the guarantee is fragile, and organic evaluations on rare-class proxies plus YelpChi fraud complement injected benchmarks.
 All numbers regenerate from pinned code.
 
-Limitations remain: CONAD under the identical protocol is left for future work; the organic proxy is not a real fraud graph; and concentration of single-deployment FPR is left empirical.
+Limitations remain: YelpChi uses heuristic scorers under CRC-GAD (deep backbones on 45k nodes are optional heavier runs); concentration of single-deployment FPR is left empirical; and ogbn-scale graphs are not yet reported.
 Future work includes trimmed calibration under contamination~\cite{bates2023testing}, online updates on evolving graphs, and tighter coupling to domain-specific review policies.
 CRC-GAD is best read as a \emph{calibration protocol} for graph anomaly scores: a deployment layer with precise, limited guarantees, not universal risk control.
 
@@ -1040,7 +1041,7 @@ CRC-GAD is best read as a \emph{calibration protocol} for graph anomaly scores: 
 
 \noindent\textbf{Declaration of competing interests.} The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
-\noindent\textbf{Data and code availability.} Source code and scripts to reproduce all tables are at \url{https://github.com/Amaanullakhan/CRC_GAD} (tag \texttt{v1.0-rebuild}). Datasets (Cora, Citeseer, Pubmed, ACM, BlogCatalog, Flickr) are public benchmarks~\cite{ding2019dominant,liu2022cola}; download via \texttt{scripts/download\_datasets.py}. Anomaly injection and evaluation scripts are included.
+\noindent\textbf{Data and code availability.} Source code and scripts to reproduce all tables are at \url{https://github.com/Amaanullakhan/CRC_GAD} (tag \texttt{v1.0-rebuild}). Datasets (Cora, Citeseer, Pubmed, ACM, BlogCatalog, Flickr) are public benchmarks~\cite{ding2019dominant,liu2022cola}; YelpChi downloads via \texttt{crc\_gad.data.load\_yelpchi}. Anomaly injection and evaluation scripts are included.
 
 \bibliographystyle{IEEEtran}
 \bibliography{ref}

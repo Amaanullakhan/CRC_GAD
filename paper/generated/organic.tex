@@ -1,10 +1,13 @@
-\begin{tabular}{lcccc}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccc}
 \toprule
-Backbone & Raw AUC & FPR@0.05 & TPR@0.05 & Time (s) \\
+Backbone & organic\_citeseer AUC & FPR & organic\_cora AUC & FPR & yelpchi AUC & FPR \\
 \midrule
-attr\_deviation & 0.473$\pm$0.000 & 0.059$\pm$0.009 & 0.030$\pm$0.017 & 0.064$\pm$0.015 \\
-cola & 0.499$\pm$0.018 & 0.051$\pm$0.010 & 0.041$\pm$0.037 & 1.764$\pm$0.029 \\
-degree & 0.512$\pm$0.004 & 0.040$\pm$0.006 & 0.017$\pm$0.015 & 0.000$\pm$0.000 \\
-dominant\_style & 0.466$\pm$0.006 & 0.058$\pm$0.015 & 0.025$\pm$0.020 & 10.557$\pm$0.811 \\
+attr\_deviation & 0.506$\pm$0.000 & 0.042$\pm$0.007 & 0.473$\pm$0.000 & 0.059$\pm$0.009 & 0.587$\pm$0.000 & 0.043$\pm$0.001 \\
+cola & 0.455$\pm$0.010 & 0.047$\pm$0.011 & 0.499$\pm$0.018 & 0.051$\pm$0.010 & --- & --- \\
+degree & 0.549$\pm$0.007 & 0.035$\pm$0.010 & 0.512$\pm$0.004 & 0.040$\pm$0.006 & 0.530$\pm$0.000 & 0.044$\pm$0.002 \\
+dominant\_style & 0.461$\pm$0.006 & 0.061$\pm$0.009 & 0.466$\pm$0.006 & 0.058$\pm$0.015 & --- & --- \\
+feature\_norm & --- & --- & --- & --- & 0.539$\pm$0.000 & 0.046$\pm$0.002 \\
 \bottomrule
 \end{tabular}
+}

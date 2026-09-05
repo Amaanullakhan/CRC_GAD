@@ -152,10 +152,151 @@ def _load_mat_dataset(name: str) -> Tuple[np.ndarray, sp.csr_matrix, np.ndarray]
     raise FileNotFoundError(f"No real data for {name}. Run: python scripts/download_datasets.py")
 
 
+def load_yelpchi() -> Tuple[np.ndarray, sp.csr_matrix, np.ndarray]:
+    """Load YelpChi fraud graph with organic (non-injected) fraud labels.
+
+    Prefers a local ``data/yelpchi.npz`` with keys features/attr, adj_*, label/y.
+    If missing, attempts a public CARE-GNN-compatible download into ``data/``.
+    Multi-relational edges are collapsed to an undirected binary adjacency.
+    """
+    npz_path = DATA_ROOT / "yelpchi.npz"
+    if not npz_path.exists():
+        _try_download_yelpchi(npz_path)
+    if not npz_path.exists():
+        raise FileNotFoundError(
+            "YelpChi not found. Place data/yelpchi.npz with keys "
+            "features (or attr_*), adj_* / A, and label (or y)."
+        )
+    d = np.load(npz_path, allow_pickle=True)
+    if "features" in d:
+        features = np.asarray(d["features"], dtype=np.float64)
+    elif "attr_data" in d:
+        features = sp.csr_matrix(
+            (d["attr_data"], d["attr_indices"], d["attr_indptr"]),
+            shape=tuple(d["attr_shape"]),
+        ).toarray().astype(np.float64)
+    elif "X" in d:
+        features = np.asarray(d["X"], dtype=np.float64)
+    else:
+        raise KeyError("yelpchi.npz missing features")
+
+    if "adj_data" in d:
+        adj = sp.csr_matrix(
+            (d["adj_data"], d["adj_indices"], d["adj_indptr"]),
+            shape=tuple(d["adj_shape"]),
+        )
+    elif "A" in d:
+        raw_a = d["A"]
+        # np.savez may wrap a scipy sparse as a 0-d object array
+        if isinstance(raw_a, np.ndarray) and raw_a.dtype == object:
+            raw_a = raw_a.item()
+        adj = sp.csr_matrix(raw_a)
+    else:
+        raise KeyError("yelpchi.npz missing adjacency")
+
+    if "label" in d:
+        labels = np.asarray(d["label"]).ravel().astype(np.int32)
+    elif "y" in d:
+        labels = np.asarray(d["y"]).ravel().astype(np.int32)
+    else:
+        raise KeyError("yelpchi.npz missing labels")
+
+    adj = adj.tocsr()
+    adj = adj + adj.T
+    adj.data = np.ones_like(adj.data)
+    # Drop self-loops for degree heuristics consistency
+    adj.setdiag(0)
+    adj.eliminate_zeros()
+    n = adj.shape[0]
+    if features.shape[0] != n:
+        raise ValueError(f"YelpChi feature/adj size mismatch: {features.shape[0]} vs {n}")
+    if labels.shape[0] != n:
+        raise ValueError(f"YelpChi label/adj size mismatch: {labels.shape[0]} vs {n}")
+    labels = (labels > 0).astype(np.int32)
+    return features, adj, labels
+
+
+def _try_download_yelpchi(dest_npz: Path) -> None:
+    """Best-effort download of a preprocessed YelpChi npz (organic fraud labels)."""
+    import zipfile
+    import tempfile
+
+    DATA_ROOT.mkdir(parents=True, exist_ok=True)
+    # Public mirrors used by fraud-graph papers (CARE-GNN / DGL exports)
+    urls = [
+        "https://github.com/YingtongDou/CARE-GNN/raw/master/data/YelpChi.zip",
+        "https://raw.githubusercontent.com/YingtongDou/CARE-GNN/master/data/YelpChi.zip",
+    ]
+    zip_path = DATA_ROOT / "YelpChi.zip"
+    for url in urls:
+        try:
+            print(f"Downloading YelpChi from {url} ...", flush=True)
+            urllib.request.urlretrieve(url, zip_path)
+            break
+        except Exception as e:
+            print(f"YelpChi download failed ({url}): {e}", flush=True)
+    if not zip_path.exists():
+        return
+
+    try:
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            with tempfile.TemporaryDirectory() as td:
+                zf.extractall(td)
+                td_path = Path(td)
+                mat_files = list(td_path.rglob("*.mat")) + list(DATA_ROOT.glob("*yelp*.mat"))
+                # Some releases ship .mat; convert if scipy can read
+                if mat_files:
+                    import scipy.io as sio
+
+                    smat = sio.loadmat(str(mat_files[0]))
+                    # CARE-GNN YelpChi.mat typically: homo, features, label
+                    if "homo" in smat:
+                        adj = sp.csr_matrix(smat["homo"])
+                    elif "Network" in smat:
+                        adj = sp.csr_matrix(smat["Network"])
+                    else:
+                        raise KeyError(f"No homo/Network in {mat_files[0]}")
+                    if "features" in smat:
+                        raw = smat["features"]
+                        features = raw.toarray() if sp.issparse(raw) else np.asarray(raw)
+                    elif "Attributes" in smat:
+                        raw = smat["Attributes"]
+                        features = raw.toarray() if sp.issparse(raw) else np.asarray(raw)
+                    else:
+                        raise KeyError("No features in YelpChi mat")
+                    if "label" in smat:
+                        labels = np.asarray(smat["label"]).ravel()
+                    elif "Label" in smat:
+                        labels = np.asarray(smat["Label"]).ravel()
+                    else:
+                        raise KeyError("No label in YelpChi mat")
+                    labels = labels.astype(np.int32).ravel()
+                    adj = adj.tocsr()
+                    np.savez_compressed(
+                        dest_npz,
+                        features=np.asarray(features, dtype=np.float64),
+                        adj_data=adj.data,
+                        adj_indices=adj.indices,
+                        adj_indptr=adj.indptr,
+                        adj_shape=np.asarray(adj.shape, dtype=np.int64),
+                        label=labels,
+                    )
+                    print(f"Wrote {dest_npz}", flush=True)
+                    return
+                npz_files = list(td_path.rglob("*.npz"))
+                if npz_files:
+                    Path(npz_files[0]).replace(dest_npz)
+                    print(f"Wrote {dest_npz}", flush=True)
+    except Exception as e:
+        print(f"YelpChi extract/convert failed: {e}", flush=True)
+
+
 def load_dataset(name: str) -> Tuple[np.ndarray, sp.csr_matrix, np.ndarray]:
     name = name.lower()
     if name.startswith("organic_"):
         return load_organic_rare_class(name.replace("organic_", "", 1))
+    if name in ("yelpchi", "yelp_chi", "yelp"):
+        return load_yelpchi()
     if name in PLANETOID:
         return load_planetoid(name)
     if name in ("acm", "blogcatalog", "flickr"):
