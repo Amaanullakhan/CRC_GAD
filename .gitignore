@@ -17,8 +17,17 @@ paper/*.out
 paper/*.abs
 paper/*.synctex.gz
 paper/main.pdf
+paper/output.pdf
 paper/supplementary.pdf
 paper.zip
+paper\ \(*.zip
+paper/_diag*
+
+# Local experiment probes and previous-run backups (not part of the pinned protocol)
+scripts/_*.py
+scripts/force_improve_probe.py
+results/*_prev.csv
+results/*_before_*.csv
 
 # Local-only (not for public GitHub)
 COVER_LETTER_KBS.md

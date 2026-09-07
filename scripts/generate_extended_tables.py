@@ -102,11 +102,30 @@ def gen_organic(rows):
         return
     datasets = sorted({r["dataset"] for r in rows})
     backbones = sorted({r["backbone"] for r in rows})
-    # Multi-dataset organic table: Backbone x (AUC/FPR per dataset)
+    ds_label = {
+        "organic_citeseer": "Citeseer",
+        "organic_cora": "Cora",
+        "yelpchi": "YelpChi",
+    }
+    bb_label = {
+        "attr_deviation": "attr.\\ dev.",
+        "dominant_style": "DOM-style",
+        "feature_norm": "feat.\\ norm",
+    }
+    # Full-width table: Backbone x (AUC/FPR per dataset)
+    rules = " ".join(
+        f"\\cmidrule(lr){{{2 + 2 * i}-{3 + 2 * i}}}" for i in range(len(datasets))
+    )
     lines = [
         "\\begin{tabular}{l" + "cc" * len(datasets) + "}",
         "\\toprule",
-        "Backbone & " + " & ".join(f"{tex_id(d)} AUC & FPR" for d in datasets) + " \\\\",
+        "Backbone & "
+        + " & ".join(
+            f"\\multicolumn{{2}}{{c}}{{{ds_label.get(d, tex_id(d))}}}" for d in datasets
+        )
+        + " \\\\",
+        rules,
+        " & " + " & ".join("AUC & FPR" for _ in datasets) + " \\\\",
         "\\midrule",
     ]
     for bb in backbones:
@@ -115,7 +134,7 @@ def gen_organic(rows):
             sub = [r for r in rows if r["backbone"] == bb and r["dataset"] == d]
             cells.append(ms([r["raw_auc_all"] for r in sub]))
             cells.append(ms([r["fpr@0.05"] for r in sub]))
-        lines.append(f"{tex_id(bb)} & " + " & ".join(cells) + " \\\\")
+        lines.append(f"{bb_label.get(bb, tex_id(bb))} & " + " & ".join(cells) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     write("organic.tex", "\n".join(lines) + "\n")
 

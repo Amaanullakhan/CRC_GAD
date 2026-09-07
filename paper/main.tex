@@ -146,15 +146,26 @@ Post-hoc score calibration
 \label{sec:introduction}
 
 Detecting anomalous nodes on attributed graphs is a vital task for organizations that must protect networked systems against abuse, fraud, and structural manipulation.
-Applications span cybersecurity~\cite{ding2019dominant}, financial monitoring~\cite{xu2022conad}, social-media integrity~\cite{fan2020anomalydae}, telecom analytics~\cite{ma2021comprehensive}, and biomedical graph mining~\cite{akoglu2015graph}.
+Applications span cybersecurity~\cite{ding2019dominant} and financial monitoring~\cite{xu2022conad}.
+They also include social-media integrity~\cite{fan2020anomalydae} and telecom analytics~\cite{ma2021comprehensive}.
+Biomedical graph mining is another setting~\cite{akoglu2015graph}.
 In deployed screening pipelines, such detectors act as automated filters whose alerts trigger downstream human review, so the reliability of each alert---not only its ranking---determines practical value~\cite{ma2021comprehensive,bates2023testing}.
-Related deep GAD and multi-view detectors continue to improve ranking quality on attributed networks~\cite{shao2023kbsgdae,kong2025kbsdegad,gusare2026kbsmaf,shi2023kbsmutant,ge2024kbsestcn}.
+Related deep GAD and multi-view detectors continue to improve ranking quality on attributed networks.
+Shao et al.~\cite{shao2023kbsgdae} reconstruct structure together with multiple attribute views, and Kong et al.~\cite{kong2025kbsdegad} combine diffusion enhancement with multi-view contrast.
+Gusare et al.~\cite{gusare2026kbsmaf} fuse structural and latent representations.
+Shi et al.~\cite{shi2023kbsmutant} and Ge et al.~\cite{ge2024kbsestcn} extend graph models to temporal anomaly detection.
 The graph setting is challenging: node features and topology are tightly coupled, normality is contextual, and anomaly labels are rarely available at scale~\cite{ma2021comprehensive}.
 Traditionally, anomaly detection on graphs relied on hand-crafted ego-network statistics, community residuals, and spectral features~\cite{akoglu2015graph,sen2008collective}.
 These methods remain interpretable but often fall short on large attributed networks where nonlinear interactions between structure and high-dimensional attributes dominate.
-With the advancement of deep learning, graph neural networks (GNNs)~\cite{kipf2017gcn,hamilton2017inductive,velickovic2018graph} have received much attention for unsupervised anomaly detection.
-Reconstruction-based architectures~\cite{ding2019dominant,fan2020anomalydae,yuan2021guide} learn to encode and decode the graph, treating large reconstruction errors as anomaly signals.
-Complementarily, contrastive self-supervision~\cite{chen2020simclr,oord2018representation} trains encoders by contrasting nodes against local subgraph context; representative graph anomaly detectors include subgraph-level instance discrimination~\cite{liu2022cola}, multi-view contrastive designs~\cite{zheng2021slgad,jin2021anemone,xu2022conad}, and recent robustness-oriented extensions~\cite{luo2025adgcl,shi2025cvgad,qiao2025uniform}.
+With the advancement of deep learning, graph neural networks (GNNs)~\cite{kipf2017gcn,hamilton2017inductive} have received much attention for unsupervised anomaly detection.
+Attention-based message passing~\cite{velickovic2018graph} is part of the same line.
+Reconstruction-based architectures such as DOMINANT~\cite{ding2019dominant} and AnomalyDAE~\cite{fan2020anomalydae} learn to encode and decode the graph.
+GUIDE~\cite{yuan2021guide} treats large reconstruction errors as anomaly signals.
+Complementarily, contrastive self-supervision~\cite{chen2020simclr,oord2018representation} trains encoders by contrasting nodes against local subgraph context.
+Representative detectors include subgraph-level instance discrimination~\cite{liu2022cola} and multi-view designs such as SL-GAD~\cite{zheng2021slgad}.
+ANEMONE~\cite{jin2021anemone} and CONAD~\cite{xu2022conad} extend that contrastive line.
+Later robustness-oriented extensions include AD-GCL~\cite{luo2025adgcl} and CVGAD~\cite{shi2025cvgad}.
+UniFORM~\cite{qiao2025uniform} unifies several anomaly granularities.
 Across these families, modern unsupervised scorers typically produce a real-valued anomaly ranking without access to ground-truth labels during training.
 
 However, applying deep graph anomaly scorers in operational settings still faces obstacles that are largely orthogonal to raw ranking accuracy.
@@ -164,7 +175,8 @@ Based on our setting and related literature~\cite{ma2021comprehensive,bates2023t
   \item \textbf{Lack of finite-sample, distribution-free error control.} Standard post hoc thresholds do not generally yield a provable bound on the false positive rate among normal entities at a user-chosen nominal level---precisely the form of guarantee increasingly expected in anti--money laundering workflows~\cite{bates2023testing}, clinical alerting, and intrusion analytics.
 \end{enumerate}
 
-To address these challenges, we present \textbf{CRC-GAD} (\textbf{C}onformal \textbf{R}isk-\textbf{C}ontrolled \textbf{G}raph \textbf{A}nomaly \textbf{D}etection), a lightweight \emph{post-hoc deployment protocol} that wraps a \emph{frozen} score-based graph anomaly detector with split inductive conformal prediction~\cite{vovk2005algorithmic,papadopoulos2002inductive,angelopoulos2023conformal}.
+To address these challenges, we present \textbf{CRC-GAD} (\textbf{C}onformal \textbf{R}isk-\textbf{C}ontrolled \textbf{G}raph \textbf{A}nomaly \textbf{D}etection), a lightweight \emph{post-hoc deployment protocol} that wraps a \emph{frozen} score-based graph anomaly detector with split inductive conformal prediction~\cite{vovk2005algorithmic,papadopoulos2002inductive}.
+The construction follows the split conformal treatment in Angelopoulos and Bates~\cite{angelopoulos2023conformal}.
 \textbf{Scope of novelty (pure contribution).} CRC-GAD does \emph{not} introduce a new graph neural architecture, does not modify CoLA~\cite{liu2022cola} or DOMINANT~\cite{ding2019dominant}, and does not claim higher AUC than existing scorers.
 Its novelty is the \emph{calibration protocol itself}: converting any fixed score vector into conformal p-values with a precisely stated marginal guarantee under a label-free random partition, plus an auditable flagged-rate identity (Section~\ref{sec:prob_fpr}).
 CRC-GAD never changes the backbone and requires no anomaly labels at calibration time: it consumes the scorer's outputs only.
@@ -172,7 +184,9 @@ CRC-GAD never changes the backbone and requires no anomaly labels at calibration
 Conformal prediction maps arbitrary nonconformity scores to calibrated significance measures.
 In the split (inductive) formulation, each test score is ranked against a held-out calibration reference, yielding a p-value that satisfies $\Pr(p \leq \alpha) \leq \alpha$ at any nominal level $\alpha \in [0,1]$ under standard exchangeability~\cite{angelopoulos2023conformal}; Section~\ref{sec:prob_fpr} states the construction used in CRC-GAD.
 Our graph setting emphasizes validity induced by random partitioning of evaluation nodes (Theorem~\ref{thm:randomization} in Section~\ref{sec:theory}), which is the technical core of the novelty claim: the guarantee is driven by the partition, not by assuming that GNN node scores are exchangeable.
-Although conformal methods have been applied to classification~\cite{romano2020classification}, regression~\cite{romano2019conformalized}, outlier testing~\cite{bates2023testing}, and select graph tasks~\cite{huang2024uncertainty,liu2024conformal}, the combination we study---\emph{unsupervised node-level} graph anomaly scores, a \emph{label-free} random partition, and \emph{auditable} $\alpha$-level decisions---is the gap CRC-GAD fills (orthogonal to designing a stronger scorer).
+Although conformal methods have been applied to classification~\cite{romano2020classification} and regression~\cite{romano2019conformalized}, and to outlier testing~\cite{bates2023testing}, the combination we study is different.
+Select graph tasks~\cite{huang2024uncertainty,liu2024conformal} are likewise orthogonal to designing a stronger scorer.
+The gap CRC-GAD fills is \emph{unsupervised node-level} graph anomaly scores, a \emph{label-free} random partition, and \emph{auditable} $\alpha$-level decisions.
 
 Specifically, CRC-GAD proceeds as follows:
 \begin{enumerate}
@@ -181,7 +195,9 @@ Specifically, CRC-GAD proceeds as follows:
   \item \textbf{Conformal p-values.} For each $i \in \mathcal{T}$, assign $p_i$ by ranking $s_i$ against $\{s_j\}_{j \in \mathcal{C}}$ as in Eq.~\eqref{eq:pvalue_formal}.
   \item \textbf{Decision.} Flag $i$ if $p_i \leq \alpha$ for user-chosen $\alpha$.
 \end{enumerate}
-The procedure is non-invasive (no retraining of the scorer on calibration data, no labels for the $\mathcal{C}/\mathcal{T}$ split) and model-agnostic: scorers are interchangeable inputs to the same protocol~\cite{ding2019dominant,fan2020anomalydae,xu2022conad}.
+The procedure is non-invasive (no retraining of the scorer on calibration data, no labels for the $\mathcal{C}/\mathcal{T}$ split) and model-agnostic.
+Scorers such as DOMINANT~\cite{ding2019dominant} and AnomalyDAE~\cite{fan2020anomalydae} are interchangeable inputs.
+The same protocol also wraps CONAD-style scores~\cite{xu2022conad}.
 
 The main contributions of this paper are as follows:
 \begin{enumerate}
@@ -203,11 +219,14 @@ We position CRC-GAD against three literatures: deep unsupervised GAD (strong ran
 \label{sec:rw_gad}
 
 Anomaly detection on attributed networks aims to identify nodes whose structural or attribute-level patterns deviate from the network norm.  Classical approaches relied on hand-crafted features extracted from ego-networks, community residuals, or spectral projections of the graph Laplacian~\cite{akoglu2015graph,sen2008collective}.  While interpretable, these methods scale poorly and cannot capture the nonlinear entanglement between topology and high-dimensional attributes that characterizes modern networks.
-The introduction of graph neural networks (GNNs)~\cite{kipf2017gcn,hamilton2017inductive,velickovic2018graph} enabled a new generation of deep anomaly detectors.  DOMINANT~\cite{ding2019dominant} established the reconstruction-based paradigm by coupling a GCN encoder with dual decoders that reconstruct the adjacency matrix and node feature matrix; nodes incurring large reconstruction errors under both decoders are flagged as anomalous.  AnomalyDAE~\cite{fan2020anomalydae} refined this idea with a dual-autoencoder architecture incorporating a cross-modal attention mechanism that allows the structure and attribute channels to share information through learned attention weights, improving detection of attribute-centric anomalies.  GUIDE~\cite{yuan2021guide} moved beyond first-order neighborhoods by using higher-order node motif degrees as input to a structure-aware autoencoder, capturing meso-scale patterns that first-order GCNs miss.  Shao et al.~\cite{shao2023kbsgdae} proposed a graph deep autoencoder that jointly reconstructs both structure and multiple attribute views for anomaly detection in multi-attributed networks.  GAAN~\cite{chen2020gaan} adopted a generative adversarial framework~\cite{goodfellow2014generative} in which a generator synthesizes fake attribute vectors and a discriminator learns to separate real from fake nodes, with the anomaly score combining reconstruction error and discriminator confidence.
+The introduction of graph neural networks (GNNs)~\cite{kipf2017gcn,hamilton2017inductive} enabled a new generation of deep anomaly detectors.
+Attention-based message passing~\cite{velickovic2018graph} belongs to the same line.  DOMINANT~\cite{ding2019dominant} established the reconstruction-based paradigm by coupling a GCN encoder with dual decoders that reconstruct the adjacency matrix and node feature matrix; nodes incurring large reconstruction errors under both decoders are flagged as anomalous.  AnomalyDAE~\cite{fan2020anomalydae} refined this idea with a dual-autoencoder architecture incorporating a cross-modal attention mechanism that allows the structure and attribute channels to share information through learned attention weights, improving detection of attribute-centric anomalies.  GUIDE~\cite{yuan2021guide} moved beyond first-order neighborhoods by using higher-order node motif degrees as input to a structure-aware autoencoder, capturing meso-scale patterns that first-order GCNs miss.  Shao et al.~\cite{shao2023kbsgdae} proposed a graph deep autoencoder that jointly reconstructs both structure and multiple attribute views for anomaly detection in multi-attributed networks.  GAAN~\cite{chen2020gaan} adopted a generative adversarial framework~\cite{goodfellow2014generative} in which a generator synthesizes fake attribute vectors and a discriminator learns to separate real from fake nodes, with the anomaly score combining reconstruction error and discriminator confidence.
 GCN-based architectures have also been applied to anomaly detection beyond attributed networks; for instance, Shi et al.~\cite{shi2023kbsmutant} combined temporal GCNs with an attention-based variational autoencoder for multivariate time-series anomaly detection, and Ge et al.~\cite{ge2024kbsestcn} introduced an enhanced spatio-temporal constraints network that employs graph contrastive learning to capture inter-feature associations for anomaly detection.
 
 Despite their empirical success, reconstruction-based and generative methods share two limitations.  First, they assume that anomalous nodes are poorly reconstructed by a model trained on the entire graph, an assumption that can fail when anomalies form tight clusters with internally consistent structure.  Second, they typically require full-graph decoding during both training and inference, which limits scalability to networks with hundreds of thousands of nodes.  Third, and most relevant to CRC-GAD, they output reconstruction errors or discriminator scores that are useful for ranking but are not accompanied by finite-sample, distribution-free guarantees on the false positive rate at a user-chosen significance level $\alpha$---precisely the operational requirement formalized in our contribution~(1).  These limitations motivated the development of contrastive approaches discussed next.
-A number of recent surveys provide comprehensive overviews of the field.  Ma et al.~\cite{ma2021comprehensive} present a taxonomy of deep graph anomaly detectors organized by learning paradigm (reconstruction, contrastive, generative, and hybrid); broader treatments of anomaly detection include~\cite{chandola2009anomaly,chalapathy2017deep,ruff2020unifying}.  We refer the reader to these surveys for a broader landscape and focus here on the methods most relevant to our work.
+A number of recent surveys provide comprehensive overviews of the field.  Ma et al.~\cite{ma2021comprehensive} present a taxonomy of deep graph anomaly detectors organized by learning paradigm (reconstruction, contrastive, generative, and hybrid).
+Broader treatments include Chandola et al.~\cite{chandola2009anomaly} and Chalapathy and Chawla~\cite{chalapathy2017deep}.
+Ruff et al.~\cite{ruff2020unifying} unify deep anomaly detection.  We refer the reader to these surveys for a broader landscape and focus here on the methods most relevant to our work.
 
 \subsection{Contrastive Self-Supervised Methods}
 \label{sec:rw_contrastive}
@@ -222,8 +241,11 @@ Recent multi-modal approaches such as MAF~\cite{gusare2026kbsmaf} further improv
 \subsection{Conformal Prediction and Its Application to Graphs}
 \label{sec:rw_cp}
 
-Conformal prediction (CP) is a distribution-free framework for constructing prediction sets or p-values with finite-sample validity guarantees.  Originally introduced by Vovk, Gammerman, and Shafer~\cite{vovk2005algorithmic} and popularized through accessible tutorials~\cite{angelopoulos2023conformal,shafer2008tutorial}, CP requires only that calibration and test examples be exchangeable---a condition strictly weaker than the i.i.d.\ assumption~\cite{lei2013conformal}.  The split (inductive) variant~\cite{papadopoulos2002inductive,lei2018distribution} is particularly practical: it partitions data into a training set (used to fit the model), a calibration set (used to compute nonconformity scores), and a test set (on which prediction sets or p-values are constructed), adding negligible computational overhead to any pre-trained model.
-In the supervised learning setting, CP has been applied to classification~\cite{romano2020classification}, regression~\cite{romano2019conformalized}, and multiple testing with FDR control~\cite{bates2023testing,benjamini1995fdr}; related work has also explored uncertainty quantification for deep anomaly detection~\cite{zhang2024eswauncertainty}.  More broadly, conformal p-values have been used for outlier detection in tabular data, where the goal is to test whether a new observation belongs to the same distribution as the reference (calibration) set~\cite{bates2023testing}.
+Conformal prediction (CP) is a distribution-free framework for constructing prediction sets or p-values with finite-sample validity guarantees.  Originally introduced by Vovk, Gammerman, and Shafer~\cite{vovk2005algorithmic} and popularized through accessible tutorials~\cite{angelopoulos2023conformal,shafer2008tutorial}, CP requires only that calibration and test examples be exchangeable.
+That condition is strictly weaker than the i.i.d.\ assumption~\cite{lei2013conformal}.  The split (inductive) variant~\cite{papadopoulos2002inductive,lei2018distribution} is particularly practical: it partitions data into a training set (used to fit the model), a calibration set (used to compute nonconformity scores), and a test set (on which prediction sets or p-values are constructed), adding negligible computational overhead to any pre-trained model.
+In the supervised learning setting, CP has been applied to classification~\cite{romano2020classification} and regression~\cite{romano2019conformalized}.
+It has also been applied to multiple testing with FDR control~\cite{bates2023testing,benjamini1995fdr}.
+Related work has explored uncertainty quantification for deep anomaly detection~\cite{zhang2024eswauncertainty}.  More broadly, conformal p-values have been used for outlier detection in tabular data, where the goal is to test whether a new observation belongs to the same distribution as the reference (calibration) set~\cite{bates2023testing}.
 Within the graph learning community, interest in conformal methods has grown rapidly.  Huang et al.~\cite{huang2024uncertainty} applied CP to GNN-based node classification, constructing prediction sets with guaranteed marginal coverage and showing that accounting for graph topology improves efficiency (smaller prediction sets at the same coverage level).  Liu et al.~\cite{liu2024conformal} explored conformal methods for graph-level out-of-distribution detection with adaptive data augmentation.  Complementarily, conformal and risk-control tools that leverage labeled anomalies (or other supervised signals) during training or calibration can target multiple operating criteria~\cite{bates2023testing}; such settings are orthogonal to CRC-GAD, which keeps the scorer fully unsupervised and uses only a random hold-out split for split conformal p-values.
 
 Existing conformal graph methods primarily target supervised node classification (coverage of label sets) or graph-level out-of-distribution detection with labeled or augmented signals~\cite{huang2024uncertainty,liu2024conformal}.  Tabular conformal outlier tests~\cite{bates2023testing} assume i.i.d.\ feature vectors rather than dependent node scores on a fixed graph.  None of these settings simultaneously (i)~preserves a fully unsupervised contrastive graph scorer, (ii)~calibrates \emph{node-level} anomaly rankings post hoc, and (iii)~delivers marginal FPR control via a score-agnostic random partition rather than node exchangeability.
@@ -445,7 +467,7 @@ CRC-GAD is a two-phase framework that first obtains unsupervised anomaly scores 
 \begin{figure*}[pos=t]
 \centering
 \includegraphics[width=\linewidth]{figures/pipeline.png}
-\caption{Overview of CRC-GAD: a frozen score-based GAD backbone (CoLA-inspired contrastive by default; PyTorch DOMINANT and degree/attribute alternatives in experiments), split conformal calibration to $p$-values via a label-free random $\mathcal{C}/\mathcal{T}$ split, and decisions at nominal level $\alpha$. The proved guarantee is marginal random-test-node validity (Theorem~\ref{thm:randomization}).}
+\caption{Overview of CRC-GAD. A frozen score-based detector (CoLA-inspired by default; DOMINANT, CONAD-style, or heuristics) emits raw scores. A label-free random $\mathcal{C}/\mathcal{T}$ split converts those scores into conformal $p$-values, and a node is flagged if $p_i\leq\alpha$. The proved statement is marginal random-test-node validity (Theorem~\ref{thm:randomization}), not node-conditional FPR and not a TPR guarantee.}
 \label{fig:pipeline}
 \end{figure*}
 This design is model-agnostic: any score-based graph anomaly detector (e.g., DOMINANT, AnomalyDAE, CONAD) can serve as the backbone; the conformal layer adds marginal validity over the random calibration--test partition (Theorem~\ref{thm:randomization}), not per-node FPR guarantees.
@@ -499,7 +521,8 @@ Under Theorem~\ref{thm:randomization}, $\Pr(p_i \leq \alpha) \leq \alpha$ margin
 \subsection{Training Algorithm}
 \label{sec:meth_algorithm}
 
-Algorithm~\ref{alg:crcgad} summarizes the end-to-end CRC-GAD pipeline (contrastive scoring step matches our simplified implementation in Section~\ref{sec:meth_training}). The algorithm takes as input the attributed graph $\mathcal{G}$, hyperparameters (scoring rounds $R$, calibration ratio $\rho$, etc.), and the significance level $\alpha$. It outputs conformal p-values and binary decisions for all test nodes. Steps 1--2 preprocess the graph and partition the node set. Steps 3--5 train the contrastive scorer with early stopping on validation AUC. Steps 6--7 compute anomaly scores for all nodes over $R$ rounds. Steps 8--9 compute p-values and apply the decision rule for test nodes. The conformal layer is model-agnostic: any score-based graph anomaly detector can serve as the backbone~\cite{ding2019dominant,fan2020anomalydae,xu2022conad}. Table~\ref{tab:main_results} reports the pinned simplified CoLA-style scorer; Table~\ref{tab:backbones} wraps multiple alternative scorers with the same CRC-GAD layer.
+Algorithm~\ref{alg:crcgad} summarizes the end-to-end CRC-GAD pipeline (contrastive scoring step matches our simplified implementation in Section~\ref{sec:meth_training}). The algorithm takes as input the attributed graph $\mathcal{G}$, hyperparameters (scoring rounds $R$, calibration ratio $\rho$, etc.), and the significance level $\alpha$. It outputs conformal p-values and binary decisions for all test nodes. Steps 1--2 preprocess the graph and partition the node set. Steps 3--5 train the contrastive scorer with early stopping on validation AUC. Steps 6--7 compute anomaly scores for all nodes over $R$ rounds. Steps 8--9 compute p-values and apply the decision rule for test nodes. The conformal layer is model-agnostic: any score-based graph anomaly detector can serve as the backbone, including DOMINANT~\cite{ding2019dominant} and AnomalyDAE~\cite{fan2020anomalydae}.
+The same wrapper also applies to CONAD-style scores~\cite{xu2022conad}. Table~\ref{tab:main_results} reports the pinned simplified CoLA-style scorer; Table~\ref{tab:backbones} wraps multiple alternative scorers with the same CRC-GAD layer.
 
 \begin{algorithm}[t]
 \caption{CRC-GAD pipeline.}
@@ -790,11 +813,11 @@ Code: \url{https://github.com/Amaanullakhan/CRC_GAD} (tag \texttt{v1.0-rebuild})
 
 \begin{table}[pos=t]
 \centering
-\caption{Summary statistics of the benchmark datasets.}
+\caption{Summary statistics of the benchmark datasets. YelpChi is the organic (non-injected) fraud graph.}
 \label{tab:datasets}
 \footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrc}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrc@{}}
 \toprule
 \textbf{Dataset} & $N$ & $|\mathcal{E}|$ & $F$ & \textbf{\#Anom.} & \textbf{\%} \\
 \midrule
@@ -804,7 +827,7 @@ Pubmed & 19,717 & 44,338 & 500 & 600 & 3.0\% \\
 ACM & 16,484 & 71,980 & 8,337 & 600 & 3.6\% \\
 BlogCatalog & 5,196 & 171,743 & 8,189 & 300 & 5.8\% \\
 Flickr & 7,575 & 239,738 & 12,047 & 450 & 5.9\% \\
-YelpChi (organic) & 45,954 & $\sim$3.8M & 32 & 6,677 & 14.5\% \\
+YelpChi & 45,954 & $\sim$3.8M & 32 & 6,677 & 14.5\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -882,9 +905,10 @@ On Cora at $\alpha=0.05$ (Table~\ref{tab:exp_conformal_compare}; mean$\pm$std ov
 
 \begin{table}[pos=t]
 \centering
-\caption{Heuristic comparison on Cora ($\alpha=0.05$; mean$\pm$std over 5 seeds). Full multi-dataset view also in Table~\ref{tab:heuristics_multi}.}
+\caption{Heuristic comparison on Cora ($\alpha=0.05$; mean$\pm$std over 5 seeds). Feat.\ CP is feature-space split conformal; Unif.+CP is uniform random scores plus split CP. Full multi-dataset view in Table~\ref{tab:heuristics_multi}.}
 \label{tab:exp_conformal_compare}
 \footnotesize
+\setlength{\tabcolsep}{2.5pt}
 \input{generated/heuristics.tex}
 \end{table}
 
@@ -908,6 +932,7 @@ To quantify partition variance under graph dependence, we report empirical FPR@0
 \caption{FPR@0.05 variance under edge rewiring + 200 random splits per seed (Cora; mean over seeds $\{0,\ldots,4\}$).}
 \label{tab:dependence}
 \footnotesize
+\setlength{\tabcolsep}{2.5pt}
 \input{generated/dependence.tex}
 \end{table}
 
@@ -973,13 +998,14 @@ Global FPR near $\alpha$ can coexist with quartile-level deviations (Table~\ref{
 
 Injected anomalies dominate the main table by design (shared DOMINANT/CoLA protocol). To reduce that dependence, we also evaluate \emph{organic} labels with \textbf{no injection}: (i)~rarest Planetoid class on Cora and Citeseer as class-imbalance proxies; (ii)~YelpChi review-fraud nodes with real fraud labels (homo graph used in CONAD-era fraud-detection benchmarks~\cite{xu2022conad}). Table~\ref{tab:organic} reports CRC-GAD under these definitions. On YelpChi ($\approx$46k nodes) we use scalable heuristic scorers under the same conformal wrapper; training full deep backbones there is an optional heavier extension.
 
-\begin{table}[pos=t]
+\begin{table*}[pos=t]
 \centering
 \caption{Organic (non-injected) evaluation (mean$\pm$std, 5 seeds, $\alpha=0.05$). Rare-class Planetoid proxies remain near-chance AUC (diagnostic); YelpChi uses real fraud labels with heuristic scorers. FPR near $\alpha$ is the calibration check.}
 \label{tab:organic}
 \footnotesize
+\setlength{\tabcolsep}{4pt}
 \input{generated/organic.tex}
-\end{table}
+\end{table*}
 
 \subsubsection{Comparison with Supervised Conformal Baseline}
 \label{sec:abl_crcsgad}
@@ -1005,7 +1031,8 @@ CRC-GAD is best read as a \emph{calibration protocol} for graph anomaly scores: 
 
 \section*{Declarations}
 
-\noindent\textbf{Declaration of originality.} This manuscript reports original experimental results regenerated from the authors' pinned codebase. No numerical values were copied from previously published tables. Prior scorers and theory (in particular CoLA~\cite{liu2022cola}, DOMINANT~\cite{ding2019dominant}, and conformal prediction~\cite{vovk2005algorithmic,bates2023testing}) are cited as foundations; CRC-GAD claims only the calibration protocol and the associated analysis, not authorship of those components.
+\noindent\textbf{Declaration of originality.} This manuscript reports original experimental results regenerated from the authors' pinned codebase. No numerical values were copied from previously published tables. Prior scorers and theory are cited as foundations: CoLA~\cite{liu2022cola} and DOMINANT~\cite{ding2019dominant}, and conformal prediction~\cite{vovk2005algorithmic,bates2023testing}.
+CRC-GAD claims only the calibration protocol and the associated analysis, not authorship of those components.
 
 \noindent\textbf{Declaration of generative AI use.} Generative AI tools were used for manuscript editing, LaTeX formatting, and code-assistance during the reproducibility rebuild; all experiments, numerical results, and scientific claims were designed, executed, and verified by the authors.
 

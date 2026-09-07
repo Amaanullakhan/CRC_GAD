@@ -158,9 +158,9 @@ def gen_studies(study_rows):
         for r in dep:
             by_rw[float(r["rewire_frac"])].append(r)
         lines = [
-            "\\begin{tabular}{ccccc}",
+            "\\begin{tabular}{@{}ccccc@{}}",
             "\\toprule",
-            "Rewire frac & FPR mean & FPR std & 5th pct & 95th pct \\\\",
+            "Rewire & Mean & Std & 5th & 95th \\\\",
             "\\midrule",
         ]
         for rw in sorted(by_rw):
@@ -177,13 +177,19 @@ def gen_studies(study_rows):
     heur = [r for r in study_rows if r.get("study") == "heuristics"]
     if heur:
         order = ["CRC-GAD", "Percentile", "Feature-space CP", "Uniform random + CP"]
+        short = {
+            "CRC-GAD": "CRC-GAD",
+            "Percentile": "Percentile",
+            "Feature-space CP": "Feat.\\ CP",
+            "Uniform random + CP": "Unif.+CP",
+        }
         by_m: dict[str, list] = defaultdict(list)
         for r in heur:
             by_m[r["method"]].append(r)
         lines = [
-            "\\begin{tabular}{lcccc}",
+            "\\begin{tabular}{@{}lcccc@{}}",
             "\\toprule",
-            "Method & FPR@0.05 & TPR@0.05 & Flagged rate & Guarantee? \\\\",
+            "Method & FPR & TPR & Flagged & Guar. \\\\",
             "\\midrule",
         ]
         for method in order:
@@ -192,7 +198,7 @@ def gen_studies(study_rows):
             rows = by_m[method]
             guarantee = "Marginal" if ("CRC" in method or "Uniform" in method) else "No"
             lines.append(
-                f"{method} & {_mean_cell([float(r['fpr@0.05']) for r in rows])} & "
+                f"{short[method]} & {_mean_cell([float(r['fpr@0.05']) for r in rows])} & "
                 f"{_mean_cell([float(r['tpr@0.05']) for r in rows])} & "
                 f"{_mean_cell([float(r['flagged@0.05']) for r in rows])} & "
                 f"{guarantee} \\\\"
