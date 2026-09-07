@@ -57,7 +57,6 @@ def gen_backbones(rows):
         "degree", "feature_norm", "attr_deviation",
     ]
     lines = [
-        "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{ll" + "c" * len(datasets) + "}",
         "\\toprule",
         "Backbone & Metric & " + " & ".join(d.title() for d in datasets) + " \\\\",
@@ -81,7 +80,7 @@ def gen_backbones(rows):
         lines.append("\\midrule")
     if lines[-1] == "\\midrule":
         lines[-1] = "\\bottomrule"
-    lines += ["\\end{tabular}", "}"]
+    lines += ["\\end{tabular}"]
     write("backbones.tex", "\n".join(lines) + "\n")
 
 
@@ -105,7 +104,6 @@ def gen_organic(rows):
     backbones = sorted({r["backbone"] for r in rows})
     # Multi-dataset organic table: Backbone x (AUC/FPR per dataset)
     lines = [
-        "\\resizebox{\\linewidth}{!}{%",
         "\\begin{tabular}{l" + "cc" * len(datasets) + "}",
         "\\toprule",
         "Backbone & " + " & ".join(f"{tex_id(d)} AUC & FPR" for d in datasets) + " \\\\",
@@ -118,7 +116,7 @@ def gen_organic(rows):
             cells.append(ms([r["raw_auc_all"] for r in sub]))
             cells.append(ms([r["fpr@0.05"] for r in sub]))
         lines.append(f"{tex_id(bb)} & " + " & ".join(cells) + " \\\\")
-    lines += ["\\bottomrule", "\\end{tabular}", "}"]
+    lines += ["\\bottomrule", "\\end{tabular}"]
     write("organic.tex", "\n".join(lines) + "\n")
 
 
@@ -127,7 +125,6 @@ def gen_contamination_multi(rows):
     datasets = sorted({r["dataset"] for r in rows})
     pis = sorted({float(r["contamination_frac"]) for r in rows})
     lines = [
-        "\\resizebox{\\linewidth}{!}{%",
         "\\begin{tabular}{c" + "c" * len(datasets) + "}",
         "\\toprule",
         "$\\pi_{\\mathcal{C}}$ & " + " & ".join(f"FPR ({d})" for d in datasets) + " \\\\",
@@ -139,7 +136,7 @@ def gen_contamination_multi(rows):
             vals = [r["fpr@0.05"] for r in rows if r["dataset"] == d and abs(float(r["contamination_frac"]) - pi) < 1e-9]
             cells.append(ms(vals))
         lines.append(f"{pi:.2f} & " + " & ".join(cells) + " \\\\")
-    lines += ["\\bottomrule", "\\end{tabular}", "}"]
+    lines += ["\\bottomrule", "\\end{tabular}"]
     write("contamination_multi.tex", "\n".join(lines) + "\n")
 
 
@@ -148,7 +145,6 @@ def gen_heuristics_multi(rows):
     datasets = sorted({r["dataset"] for r in rows})
     methods = ["CRC-GAD", "Percentile", "Feature-space CP", "Uniform random + CP"]
     lines = [
-        "\\resizebox{\\textwidth}{!}{%",
         "\\begin{tabular}{ll" + "cc" * len(datasets) + "}",
         "\\toprule",
         "Method & & " + " & ".join(f"{d.title()} FPR & TPR" for d in datasets) + " \\\\",
@@ -161,7 +157,7 @@ def gen_heuristics_multi(rows):
             cells.append(ms([r["fpr@0.05"] for r in sub]))
             cells.append(ms([r["tpr@0.05"] for r in sub]))
         lines.append(f"{method} & & " + " & ".join(cells) + " \\\\")
-    lines += ["\\bottomrule", "\\end{tabular}", "}"]
+    lines += ["\\bottomrule", "\\end{tabular}"]
     write("heuristics_multi.tex", "\n".join(lines) + "\n")
 
 

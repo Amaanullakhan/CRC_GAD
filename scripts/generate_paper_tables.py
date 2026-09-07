@@ -46,7 +46,6 @@ def gen_main_results(rows):
         by[r["dataset"]].append(r)
     header = " & ".join(d.title() for d in DATASETS)
     lines = [
-        "\\resizebox{\\textwidth}{!}{%",
         f"\\begin{{tabular}}{{l{'c' * len(DATASETS)}}}",
         "\\toprule",
         f"\\textbf{{Metric}} & {header} \\\\",
@@ -83,7 +82,7 @@ def gen_main_results(rows):
     lines.append(
         "Max ID gap & " + " & ".join(gap_cells) + " \\\\"
     )
-    lines += ["\\bottomrule", "\\end{tabular}%", "}"]
+    lines += ["\\bottomrule", "\\end{tabular}"]
     write("main_results.tex", "\n".join(lines) + "\n")
 
 

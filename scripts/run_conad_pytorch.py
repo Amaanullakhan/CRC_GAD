@@ -66,6 +66,9 @@ def main():
                     edge_drop=0.15,
                     temperature=0.2,
                     alpha_recon=0.85,
+                    train_idx=part.train_idx,
+                    val_idx=part.val_idx,
+                    labels=labels,
                 )
             except Exception as e:
                 print(f"FAIL conad {dataset} seed={seed}: {e}", flush=True)

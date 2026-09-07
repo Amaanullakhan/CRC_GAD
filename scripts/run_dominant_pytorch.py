@@ -63,6 +63,9 @@ def main():
                     lr=5e-3,
                     dropout=0.3,
                     alpha=0.8,
+                    train_idx=part.train_idx,
+                    val_idx=part.val_idx,
+                    labels=labels,
                 )
             except Exception as e:
                 print(f"FAIL dominant {dataset} seed={seed}: {e}", flush=True)

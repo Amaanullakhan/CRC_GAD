@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from crc_gad.backbones import BACKBONES, get_scores
-from crc_gad.config import CONTAMINATION_LEVELS, DEFAULT
+from crc_gad.config import CONTAMINATION_LEVELS, DEFAULT, config_for_dataset
 from crc_gad.conformal_calibrate import compute_metrics, inject_calibration_contamination
 from crc_gad.data import load_dataset
 from crc_gad.inject_anomaly import inject_anomalies
@@ -22,6 +22,13 @@ from crc_gad.partition import make_partition
 
 STUDY_DATASETS = ["cora", "citeseer", "pubmed"]
 BACKBONE_NAMES = ["cola", "dominant_style", "degree", "feature_norm", "attr_deviation"]
+
+
+def _cfg_for(dataset: str, base=None):
+    cfg = config_for_dataset(dataset) if base is None else base
+    # Studies: one restart for throughput; still polarity-aligned improved scorer
+    cfg.n_restarts = 1
+    return cfg
 
 
 def _prep_injected(dataset: str, seed: int, cfg):
@@ -36,11 +43,12 @@ def _prep_injected(dataset: str, seed: int, cfg):
     return features, adj, labels, part, rng
 
 
-def run_backbones(seeds, datasets, cfg) -> list[dict]:
+def run_backbones(seeds, datasets, cfg=None) -> list[dict]:
     rows = []
     for dataset in datasets:
+        dcfg = _cfg_for(dataset, cfg)
         for seed in seeds:
-            features, adj, labels, part, rng = _prep_injected(dataset, seed, cfg)
+            features, adj, labels, part, rng = _prep_injected(dataset, seed, dcfg)
             for name in BACKBONE_NAMES:
                 t0 = time.perf_counter()
                 try:
@@ -52,8 +60,8 @@ def run_backbones(seeds, datasets, cfg) -> list[dict]:
                         train_idx=part.train_idx,
                         val_idx=part.val_idx,
                         labels=labels,
-                        cfg=cfg,
-                        epochs=40 if cfg.max_epochs <= 40 else 80,
+                        cfg=dcfg,
+                        epochs=40 if dcfg.max_epochs <= 40 else 80,
                     )
                 except Exception as e:
                     print(f"FAIL backbone {name} {dataset} seed={seed}: {e}", flush=True)
@@ -77,14 +85,15 @@ def run_backbones(seeds, datasets, cfg) -> list[dict]:
     return rows
 
 
-def run_heuristics_multi(seeds, datasets, cfg) -> list[dict]:
+def run_heuristics_multi(seeds, datasets, cfg=None) -> list[dict]:
     rows = []
     for dataset in datasets:
+        dcfg = _cfg_for(dataset, cfg)
         for seed in seeds:
-            features, adj, labels, part, rng = _prep_injected(dataset, seed, cfg)
+            features, adj, labels, part, rng = _prep_injected(dataset, seed, dcfg)
             scores = get_scores(
                 "cola", features, adj, rng,
-                train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=cfg,
+                train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=dcfg,
             )
             test_idx = part.test_idx
             y_test = labels[test_idx]
@@ -138,14 +147,15 @@ def run_heuristics_multi(seeds, datasets, cfg) -> list[dict]:
     return rows
 
 
-def run_degree_fpr(seeds, cfg) -> list[dict]:
+def run_degree_fpr(seeds, cfg=None) -> list[dict]:
     """Stratify normal-node FPR by degree quartile on Cora."""
+    dcfg = _cfg_for("cora", cfg)
     rows = []
     for seed in seeds:
-        features, adj, labels, part, rng = _prep_injected("cora", seed, cfg)
+        features, adj, labels, part, rng = _prep_injected("cora", seed, dcfg)
         scores = get_scores(
             "cola", features, adj, rng,
-            train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=cfg,
+            train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=dcfg,
         )
         from crc_gad.conformal_calibrate import conformal_pvalues
         pvals = conformal_pvalues(scores, part.cal_idx, part.test_idx)
@@ -172,15 +182,16 @@ def run_degree_fpr(seeds, cfg) -> list[dict]:
     return rows
 
 
-def run_contamination_multi(seeds, datasets, cfg) -> list[dict]:
+def run_contamination_multi(seeds, datasets, cfg=None) -> list[dict]:
     levels = list(CONTAMINATION_LEVELS) + [0.25, 0.30]
     rows = []
     for dataset in datasets:
+        dcfg = _cfg_for(dataset, cfg)
         for seed in seeds:
-            features, adj, labels, part, rng = _prep_injected(dataset, seed, cfg)
+            features, adj, labels, part, rng = _prep_injected(dataset, seed, dcfg)
             scores = get_scores(
                 "cola", features, adj, rng,
-                train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=cfg,
+                train_idx=part.train_idx, val_idx=part.val_idx, labels=labels, cfg=dcfg,
             )
             for frac in levels:
                 cal, test = inject_calibration_contamination(
@@ -274,32 +285,48 @@ def main():
 
     seeds = [int(x) for x in args.seeds.split(",") if x.strip()]
     datasets = [x.strip() for x in args.datasets.split(",") if x.strip()]
-    only = {x.strip() for x in args.only.split(",")}
+    only = {x.strip() for x in args.only.split(",") if x.strip()}
 
     all_rows: list[dict] = []
     if "backbones" in only:
-        all_rows.extend(run_backbones(seeds, datasets, cfg))
+        all_rows.extend(run_backbones(seeds, datasets, None))
     if "heuristics" in only:
-        all_rows.extend(run_heuristics_multi(seeds, datasets, cfg))
+        all_rows.extend(run_heuristics_multi(seeds, datasets, None))
     if "degree_fpr" in only:
-        all_rows.extend(run_degree_fpr(seeds, cfg))
+        all_rows.extend(run_degree_fpr(seeds, None))
     if "contamination" in only:
-        all_rows.extend(run_contamination_multi(seeds, datasets, cfg))
+        all_rows.extend(run_contamination_multi(seeds, datasets, None))
     if "organic" in only:
-        all_rows.extend(run_organic(seeds, cfg))
+        all_rows.extend(run_organic(seeds, DEFAULT))
 
-    # Avoid wiping extended_studies.csv when refreshing only organic rows
+    # Avoid wiping extended_studies.csv when refreshing a subset of studies
     if only == {"organic"}:
         out = ROOT / "results" / "organic_studies.csv"
+        prev: list[dict] = []
     else:
         out = ROOT / "results" / "extended_studies.csv"
+        prev = []
+        if out.exists() and out.stat().st_size > 0:
+            prev = list(csv.DictReader(open(out, encoding="utf-8")))
+            keep_studies = set()
+            # map only-flags to study column values
+            flag_to_study = {
+                "backbones": "backbones",
+                "heuristics": "heuristics",
+                "degree_fpr": "degree_fpr",
+                "contamination": "contamination",
+                "organic": "organic",
+            }
+            refreshed = {flag_to_study[f] for f in only if f in flag_to_study}
+            prev = [r for r in prev if r.get("study") not in refreshed]
     out.parent.mkdir(exist_ok=True)
-    keys = sorted({k for r in all_rows for k in r})
+    merged = prev + all_rows
+    keys = sorted({k for r in merged for k in r})
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
         w.writeheader()
-        w.writerows(all_rows)
-    print(f"Wrote {out} ({len(all_rows)} rows)")
+        w.writerows(merged)
+    print(f"Wrote {out} ({len(merged)} rows; new={len(all_rows)}, kept={len(prev)})")
 
 
 if __name__ == "__main__":

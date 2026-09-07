@@ -179,6 +179,5 @@ def score_conad_pytorch(
         view_err = (1.0 - cos)
         view_err = view_err / (view_err.mean() + 1e-8)
         score = alpha_recon * attr_err + (1.0 - alpha_recon) * view_err
-        # Under our injection protocol this mix can invert; flip so higher = more anomalous
-        score = -score
+        # Orientation fixed post-hoc via align_score_polarity (train∪val)
         return score.detach().cpu().numpy().astype(np.float64)

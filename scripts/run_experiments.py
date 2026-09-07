@@ -13,7 +13,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from crc_gad.config import ALPHAS, DATASETS, DEFAULT, SEEDS
+from crc_gad.config import ALPHAS, DATASETS, DEFAULT, SEEDS, config_for_dataset
 from crc_gad.conformal_calibrate import compute_metrics
 from crc_gad.data import load_dataset
 from crc_gad.inject_anomaly import inject_anomalies
@@ -21,7 +21,9 @@ from crc_gad.partition import make_partition
 from crc_gad.scorer import train_scorer
 
 
-def run_single(dataset: str, seed: int, cfg=DEFAULT) -> dict:
+def run_single(dataset: str, seed: int, cfg=None) -> dict:
+    if cfg is None:
+        cfg = config_for_dataset(dataset)
     rng = np.random.default_rng(seed)
     features, adj, _ = load_dataset(dataset)
     features, adj, labels = inject_anomalies(
@@ -58,12 +60,6 @@ def main():
     parser.add_argument("--fast", action="store_true", help="Reduced epochs/rounds")
     args = parser.parse_args()
 
-    cfg = DEFAULT
-    if args.fast:
-        cfg.max_epochs = 40
-        cfg.scoring_rounds = 8
-        cfg.val_scoring_rounds = 4
-
     out_dir = ROOT / "results"
     out_dir.mkdir(exist_ok=True)
     rows = []
@@ -85,6 +81,11 @@ def main():
                 csv_path.unlink(missing_ok=True)
 
     for dataset in args.datasets:
+        cfg = config_for_dataset(dataset)
+        if args.fast:
+            cfg.max_epochs = 40
+            cfg.scoring_rounds = 8
+            cfg.val_scoring_rounds = 4
         for seed in args.seeds:
             print(f"Running {dataset} seed={seed}...", flush=True)
             try:
